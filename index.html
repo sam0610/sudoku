@@ -188,6 +188,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .pill b { font-weight: 700; }
 .pill.hlp { background: var(--hl); border-color: var(--ink); color: var(--on-hl); }
 .top .sp { flex: 1 1 0; min-width: 0; }
+@media (max-width: 460px) { .top .title { display: none; } }
 .timer { font-family: var(--num); font-weight: 700; font-size: 17px; padding: 4px 14px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); font-variant-numeric: tabular-nums; min-width: 78px; text-align: center; }
 .timer.low { background: var(--bad-bg); border-color: var(--bad-line); color: var(--bad); }
 .play { --bs: min(100%, 600px); display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); justify-items: center; }
@@ -839,7 +840,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     ['left', '左移', ['ArrowLeft', 'a', 'h']], ['right', '右移', ['ArrowRight', 'd', 'l']],
     ['mark', '筆記:進入 / 標記當前數字,連按兩下填入', ['Space']], ['fill', '筆記模式:填入當前數字', ['v']], ['note', '筆記模式開關', ['n']], ['nextd', '筆記數字:下一個', ['Tab']], ['prevd', '筆記數字:上一個', ['Shift+Tab']],
     ['erase', '清除', ['Backspace', 'Delete']], ['hint', '提示', ['t']], ['hintnext', '提示:下一步 / 套用', ['Enter']],
-    ['auto', '自動筆記', ['f']], ['rollback', '回溯', ['r']], ['pause', '暫停 / 繼續', ['p']],
+    ['auto', '自動筆記', ['f']], ['check', '核對正確答案', ['c']], ['pause', '暫停 / 繼續', ['p']],
   ];
   const KEYS = {};
   let KEYACT = {};
@@ -887,6 +888,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     hint: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
     auto: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
     rollback: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
     sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
     pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
     play: '<polygon points="6 3 20 12 6 21 6 3"/>',
@@ -897,7 +899,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   /* ---------- 狀態 ---------- */
   const DEF_SET = { hl: 'full', err: true, auto: true, anim: true };
   const S = {
-    screen: 'lobby', g: null, sel: -1, noteMode: false, noteDigit: 0, hint: null, paused: false, modal: null, cap: null,
+    screen: 'lobby', g: null, sel: -1, noteMode: false, noteDigit: 0, hint: null, paused: false, modal: null, cap: null, check: null,
     set: Object.assign({}, DEF_SET),
     lobby: { diff: 'easy', timed: false, limited: false, blind: true },
     stats: {}, saved: null, winTimer: 0,
@@ -935,6 +937,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     return { v: Array.from(g.v).join(''), n: g.notes.map(hex3).join(''), e: g.elim.map(hex3).join(''), h: g.how.map((x) => x || '-').join('') };
   }
   function restore(g, s) {
+    S.check = null;
     for (let i = 0; i < 81; i++) {
       g.v[i] = +s.v[i];
       g.notes[i] = parseInt(s.n.substr(i * 3, 3), 16) || 0;
@@ -943,6 +946,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     }
   }
   function pushUndo(g) {
+    S.check = null;
     g.U.push(snap(g));
     if (g.U.length > 400) g.U.shift();
     g.Rd.length = 0;
@@ -1121,7 +1125,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     if (!g) return;
     const showErr = S.set.err && !g.flags.blind;
     const sel = S.sel, hl = S.set.hl, nd = S.noteMode ? S.noteDigit : 0;
-    const sv = nd || (sel >= 0 ? g.v[sel] : 0);
+    const sv = (sel >= 0 ? g.v[sel] : 0) || nd; /* 選中有數字嘅格:筆記模式同一般模式一樣,反光該數字所有格 */
     const nx = null; /* 筆記數字模式不再用斜線標示衝突格 */
     const marks = computeMarks(g), hm = hintMarks(S.hint);
     const peers = sel >= 0 && hl !== 'off' ? new Set(E.PEERS[sel]) : null;
@@ -1139,7 +1143,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       if (hm.elim.has(i)) cls += ' he';
       if (hm.tgt.has(i)) cls += ' ht';
       if (showErr && v && marks.conf[i]) cls += ' conf';
-      if (showErr && v && marks.wrong[i]) cls += ' wrong';
+      if (v && ((showErr && marks.wrong[i]) || (S.check && S.check.has(i)))) cls += ' wrong';
       if (i === sel) cls += ' sel';
       if (peers && E.BX[i] === E.BX[sel] && r !== E.RW[sel] && c !== E.CL[sel]) cls += ' bx';
       let inner = '';
@@ -1204,6 +1208,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       <span class="title">數獨</span>
       <span class="pill hlp"><b>${dname(g.diff)}</b></span>
       <span class="sp"></span>
+      <button class="btn ghost small" data-act="reset" ${g.status !== 'play' ? 'disabled' : ''}>重置</button>
       <span class="timer" id="tm" aria-label="${g.flags.timed ? '剩餘時間' : '用時'}"></span>
       <button class="iconbtn" data-act="pause" aria-label="${S.paused ? '繼續' : '暫停'}" ${g.status !== 'play' ? 'disabled' : ''}>${ic(S.paused ? 'play' : 'pause', 18)}</button>`;
     updateTimer();
@@ -1235,18 +1240,18 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   }
   function renderTools() {
     const g = S.g, live = g.status === 'play' && !S.paused;
-    const hintOff = g.flags.blind || (g.maxHints > 0 && g.hints >= g.maxHints && !S.hint);
+    const hintOff = g.maxHints > 0 && g.hints >= g.maxHints && !S.hint;
     const T = [
       ['undo', '撤銷', !live || !g.U.length, false, ''],
       ['redo', '重做', !live || !g.Rd.length, false, ''],
       ['erase', '清除', !live, false, ''],
       ['note', '筆記', !live, S.noteMode, ''],
-      ['hint', '提示', !live || hintOff, !!S.hint, g.flags.blind ? '盲填模式不能使用提示' : ''],
+      ['hint', '提示', !live || hintOff, !!S.hint, ''],
       ['auto', '自動筆記', !live, false, ''],
-      ['rollback', '回溯', !live || g.flags.blind, false, g.flags.blind ? '盲填模式不能使用回溯' : '回到最後一個沒有錯誤的狀態'],
+      ['check', '核對', !live, !!S.check, '和正確答案核對,標示填錯的格'],
       ['settings', '設定', false, false, ''],
     ];
-    const icons = { undo: 'undo', redo: 'redo', erase: 'erase', note: 'note', hint: 'hint', auto: 'auto', rollback: 'rollback', settings: 'sliders' };
+    const icons = { undo: 'undo', redo: 'redo', erase: 'erase', note: 'note', hint: 'hint', auto: 'auto', check: 'check', settings: 'sliders' };
     $('#tools').innerHTML = T.map(([a, label, dis, on, title]) =>
       `<button class="tool ${on ? 'on' : ''}" data-act="${a}" ${dis ? 'disabled' : ''} ${title ? `title="${title}"` : ''} ${a === 'note' ? `aria-pressed="${on}"` : ''}>${ic(icons[a], 20)}<span>${label}</span></button>`).join('');
   }
@@ -1285,7 +1290,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
         <hr class="sep">
         <div><h2>挑戰模式</h2><div class="flags">
           ${sw('timed', '限時', `${d.limit} 分鐘內完成,時間到即失敗`, false)}
-        </div><p class="hint-text" style="margin-top:8px">盲填固定開啟:填錯時不提示,填滿後才檢查。</p></div>
+        </div><p class="hint-text" style="margin-top:8px">盲填固定開啟:填錯時不提示,填滿後才檢查,也可以隨時按「核對」。</p></div>
         <hr class="sep">
         <div class="row"><button class="btn primary grow" data-act="start">開始遊戲</button></div>
         <div class="row">
@@ -1504,10 +1509,10 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     if (!canAct()) return;
     const g = S.g;
     if (S.hint) { S.hint = null; render(); return; }
-    if (g.flags.blind) { say('盲填模式不能使用提示'); return; }
     if (g.maxHints && g.hints >= g.maxHints) { say('這局的提示已經用完'); return; }
     const step = E.hint(g.v, g.sol, g.elim);
     if (!step) { say('盤面已經完成了'); return; }
+    if (g.flags.blind && step.tech === 'error') { say('盤面有填錯的格,請先按「核對」查看(不扣提示次數)'); return; }
     g.hints++;
     g.hintTech[step.tech] = (g.hintTech[step.tech] || 0) + 1;
     S.hint = { step, stage: 1 };
@@ -1530,6 +1535,29 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       saveGame();
     }
     render();
+  }
+  /* 核對:和正確答案比對,標示所有填錯的格(任何改動後自動取消標示) */
+  function checkAnswer() {
+    if (!canAct()) return;
+    const g = S.g;
+    if (S.check) { S.check = null; render(); return; }
+    const bad = [];
+    for (let i = 0; i < 81; i++) if (!g.puz[i] && g.v[i] && g.v[i] !== g.sol[i]) bad.push(i);
+    if (!bad.length) { say(g.v.every((x) => x) ? '全部正確!' : '目前填的數字都和正確答案一致,繼續加油。'); return; }
+    S.check = new Set(bad); S.hint = null;
+    render();
+    say(`有 ${bad.length} 格和正確答案不同,已用紅色標示。`);
+  }
+  /* 重置:整局重新開始(同一題;清除所有填寫和筆記,用時、提示次數、錯誤次數都歸零) */
+  function askReset() {
+    if (!canAct()) return;
+    S.modal = { type: 'confirm', title: '重新開始這一局?', msg: '會清除所有已填的數字和筆記,用時和提示次數亦會歸零,題目不變。這個動作不能還原。', act: 'reset-do', ok: '重新開始' };
+    render();
+  }
+  function doReset() {
+    S.noteMode = false; S.noteDigit = 0;
+    retry();
+    say('已重新開始這一局');
   }
   function togglePause() {
     const g = S.g;
@@ -1598,7 +1626,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     if (!g) return;
     g.v = Int8Array.from(g.puz); g.notes.fill(0); g.elim.fill(0); g.how.fill('');
     g.U = []; g.Rd = []; g.mistakes = 0; g.hints = 0; g.hintTech = {}; g.elapsed = 0; g.moves = 0; g.status = 'play';
-    S.modal = null; S.hint = null; S.paused = false; S.sel = firstEmpty(g);
+    S.modal = null; S.hint = null; S.paused = false; S.check = null; S.sel = firstEmpty(g);
     for (let i = 0; i < 81; i++) sigs[i] = null;
     saveGame(); render();
   }
@@ -1628,7 +1656,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     close: () => { S.modal = null; render(); },
     menu: toMenu,
     again: () => { S.modal = null; S.g = null; startNew(); },
-    retry,
+    retry, check: checkAnswer, reset: askReset, 'reset-do': doReset,
     pause: togglePause,
     undo, redo, erase: eraseCell, auto: autoNotes, rollback,
     note: toggleNote,
@@ -1702,17 +1730,51 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       S.sel = +c.dataset.i;
       renderBoard(); renderPad();
     });
-    let downCell = -1;
-    $('#board').addEventListener('pointerdown', (e) => { const c = e.target.closest('.cell'); downCell = c ? +c.dataset.i : -1; ptNote.i = -1; });
+    let downCell = -1, downTouch = false, longT = 0, longFired = false, lastTap = { i: -1, t: 0 };
+    const vib = () => { if (navigator.vibrate) { try { navigator.vibrate(12); } catch (x) {} } };
+    $('#board').addEventListener('contextmenu', (e) => e.preventDefault());
+    $('#board').addEventListener('pointerdown', (e) => {
+      const c = e.target.closest('.cell');
+      downCell = c ? +c.dataset.i : -1; ptNote.i = -1; longFired = false; clearTimeout(longT);
+      downTouch = e.pointerType === 'touch' || e.pointerType === 'pen';
+      /* 手機:筆記模式已揀數字,長按空格 = 填入該數字(快點兩下亦可) */
+      if (c && downTouch && S.noteMode && S.noteDigit && S.g && !S.paused) {
+        const i = downCell;
+        longT = setTimeout(() => {
+          if (downCell !== i || !canAct() || S.g.puz[i] || S.g.v[i]) return;
+          longFired = true; vib(); S.sel = i; inputDigit(S.noteDigit, false);
+        }, 450);
+      }
+    });
     $('#board').addEventListener('pointerup', (e) => {
+      clearTimeout(longT);
       const c = e.target.closest('.cell');
       if (!c || downCell < 0 || +c.dataset.i !== downCell) return;
       const i = downCell; downCell = -1;
-      if (!(S.noteMode && S.noteDigit && canAct()) || S.g.puz[i] || S.g.v[i]) return;
+      if (longFired) { longFired = false; return; }
+      if (!canAct()) return;
+      const g = S.g;
+      /* 手機:連點兩下「有數字」嘅格 = 進入筆記模式(以該數字做預設);筆記模式下再連點兩下有數字嘅格 = 退出 */
+      if (downTouch && (g.puz[i] || g.v[i])) {
+        const now = Date.now();
+        if (lastTap.i === i && now - lastTap.t < 450) {
+          lastTap = { i: -1, t: 0 };
+          ptNote.i = i; ptNote.t = now;
+          S.sel = i; toggleNote(); vib();
+          return;
+        }
+        lastTap = { i, t: now };
+      } else if (!(S.noteMode && S.noteDigit)) lastTap = { i: -1, t: 0 };
+      if (!(S.noteMode && S.noteDigit) || g.puz[i] || g.v[i]) return;
       ptNote.i = i; ptNote.t = Date.now();
+      /* 筆記模式:快點兩下同一個空格 = 填入預設數字 */
+      if (downTouch) {
+        if (lastTap.i === i && lastTap.n && ptNote.t - lastTap.t < 450) { lastTap = { i: -1, t: 0 }; S.sel = i; inputDigit(S.noteDigit, false); vib(); return; }
+        lastTap = { i, t: ptNote.t, n: true };
+      }
       noteTap(i);
     });
-    $('#board').addEventListener('pointercancel', () => { downCell = -1; });
+    $('#board').addEventListener('pointercancel', () => { downCell = -1; clearTimeout(longT); });
     $('#board').addEventListener('animationend', (e) => { if (e.target.classList) e.target.classList.remove('pop'); });
     /* 數字牌:短按依目前模式輸入,長按改用另一種模式 */
     let press = null;
@@ -1724,7 +1786,6 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       const d = +k.dataset.d;
       press = { d, long: false };
       const p = press;
-      p.t = setTimeout(() => { p.long = true; if (navigator.vibrate) { try { navigator.vibrate(12); } catch (x) {} } onKey(d, !S.noteMode); }, 420);
     });
     const endPress = (cancel) => (e) => {
       if (!press) return;
@@ -1802,7 +1863,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       }
       else if (act === 'hint') openHint();
       else if (act === 'auto') autoNotes();
-      else if (act === 'rollback') rollback();
+      else if (act === 'check') { e.preventDefault(); checkAnswer(); }
       else if (act === 'hintnext') { e.preventDefault(); if (!S.hint) openHint(); else if (S.hint.stage === 1) { S.hint.stage = 2; render(); } else applyHint(); }
       else if ((act === 'nextd' || act === 'prevd') && S.noteMode) {
         e.preventDefault();
