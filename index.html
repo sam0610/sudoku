@@ -837,7 +837,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   const KEYDEF = [
     ['up', '上移', ['ArrowUp', 'w', 'k']], ['down', '下移', ['ArrowDown', 's', 'j']],
     ['left', '左移', ['ArrowLeft', 'a', 'h']], ['right', '右移', ['ArrowRight', 'd', 'l']],
-    ['mark', '筆記:進入 / 標記當前數字,快速連按兩下填入', ['Space']], ['note', '筆記模式開關', ['n']], ['nextd', '筆記數字:下一個', ['Tab']], ['prevd', '筆記數字:上一個', ['Shift+Tab']],
+    ['mark', '筆記:進入 / 標記當前數字,連按兩下填入', ['Space']], ['fill', '筆記模式:填入當前數字', ['v']], ['note', '筆記模式開關', ['n']], ['nextd', '筆記數字:下一個', ['Tab']], ['prevd', '筆記數字:上一個', ['Shift+Tab']],
     ['erase', '清除', ['Backspace', 'Delete']], ['hint', '提示', ['t']], ['hintnext', '提示:下一步 / 套用', ['Enter']],
     ['auto', '自動筆記', ['f']], ['rollback', '回溯', ['r']], ['pause', '暫停 / 繼續', ['p']],
   ];
@@ -1660,7 +1660,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     const g = S.g, i = S.sel;
     if (g.puz[i] || g.v[i]) { say('這格已有數字,移到空格再標記'); return; }
     const now = Date.now();
-    if (lastMark.i === i && lastMark.d === S.noteDigit && now - lastMark.t < 450 && (g.notes[i] & bit(S.noteDigit))) { lastMark.t = 0; inputDigit(S.noteDigit, false); return; } /* 快速連按兩下 = 填入 */
+    if (lastMark.i === i && lastMark.d === S.noteDigit && now - lastMark.t < 700 && (g.notes[i] & bit(S.noteDigit))) { lastMark.t = 0; inputDigit(S.noteDigit, false); return; } /* 快速連按兩下 = 填入 */
     lastMark = { i, d: S.noteDigit, t: now };
     S.hint = null; pushUndo(g); g.notes[i] ^= bit(S.noteDigit);
     saveGame(); render();
@@ -1787,6 +1787,11 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
         S.sel = r * 9 + c;
         renderBoard(); renderPad();
       } else if (act === 'erase' || k === '0') { e.preventDefault(); eraseCell(); }
+      else if (act === 'fill') {
+        e.preventDefault();
+        if (S.noteMode && S.noteDigit && S.sel >= 0 && !S.g.puz[S.sel] && !S.g.v[S.sel]) inputDigit(S.noteDigit, false);
+        else if (S.noteMode && !S.noteDigit) say('先選一個數字再按 V 填入');
+      }
       else if (act === 'note') { e.preventDefault(); toggleNote(); }
       else if (act === 'mark') {
         e.preventDefault();
