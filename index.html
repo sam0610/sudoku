@@ -837,7 +837,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   const KEYDEF = [
     ['up', '上移', ['ArrowUp', 'w', 'k']], ['down', '下移', ['ArrowDown', 's', 'j']],
     ['left', '左移', ['ArrowLeft', 'a', 'h']], ['right', '右移', ['ArrowRight', 'd', 'l']],
-    ['mark', '筆記:進入 / 標記當前數字', ['Space']], ['note', '筆記模式開關', ['n']], ['nextd', '筆記數字:下一個', ['Tab']], ['prevd', '筆記數字:上一個', ['Shift+Tab']],
+    ['mark', '筆記:進入 / 標記當前數字,快速連按兩下填入', ['Space']], ['note', '筆記模式開關', ['n']], ['nextd', '筆記數字:下一個', ['Tab']], ['prevd', '筆記數字:上一個', ['Shift+Tab']],
     ['erase', '清除', ['Backspace', 'Delete']], ['hint', '提示', ['t']], ['hintnext', '提示:下一步 / 套用', ['Enter']],
     ['auto', '自動筆記', ['f']], ['rollback', '回溯', ['r']], ['pause', '暫停 / 繼續', ['p']],
   ];
@@ -899,7 +899,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   const S = {
     screen: 'lobby', g: null, sel: -1, noteMode: false, noteDigit: 0, hint: null, paused: false, modal: null, cap: null,
     set: Object.assign({}, DEF_SET),
-    lobby: { diff: 'easy', timed: false, limited: false, blind: false },
+    lobby: { diff: 'easy', timed: false, limited: false, blind: true },
     stats: {}, saved: null, winTimer: 0,
   };
   const blankStat = () => ({ played: 0, won: 0, best: null, total: 0, streak: 0, bestStreak: 0 });
@@ -908,6 +908,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     try { Object.assign(S.set, JSON.parse(LS.get('sdk-set') || '{}')); } catch (e) {}
     try { Object.assign(S.lobby, JSON.parse(LS.get('sdk-lobby') || '{}')); } catch (e) {}
     if (!DIFFS.some((d) => d.k === S.lobby.diff)) S.lobby.diff = 'easy';
+    S.lobby.blind = true; S.lobby.limited = false; /* 盲填固定開啟,不可更改 */
     try { S.stats = JSON.parse(LS.get('sdk-stats') || '{}') || {}; } catch (e) { S.stats = {}; }
   }
   const savePrefs = () => { LS.set('sdk-set', JSON.stringify(S.set)); LS.set('sdk-lobby', JSON.stringify(S.lobby)); };
@@ -1284,9 +1285,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
         <hr class="sep">
         <div><h2>挑戰模式</h2><div class="flags">
           ${sw('timed', '限時', `${d.limit} 分鐘內完成,時間到即失敗`, false)}
-          ${sw('limited', '限錯誤次數', L.blind ? '盲填時無法使用' : '最多錯 3 次,第 3 次即失敗', L.blind)}
-          ${sw('blind', '盲填', '填錯時不提示,填滿後才檢查', false)}
-        </div><p class="hint-text" style="margin-top:8px">挑戰模式下提示最多用 3 次。</p></div>
+        </div><p class="hint-text" style="margin-top:8px">盲填固定開啟:填錯時不提示,填滿後才檢查。</p></div>
         <hr class="sep">
         <div class="row"><button class="btn primary grow" data-act="start">開始遊戲</button></div>
         <div class="row">
@@ -1616,9 +1615,9 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     diff: (t) => { S.lobby.diff = t.dataset.v; savePrefs(); render(); },
     flag: (t) => {
       const k = t.dataset.v;
-      if (t.getAttribute('aria-disabled') === 'true') return;
+      if (k !== 'timed' || t.getAttribute('aria-disabled') === 'true') return;
       S.lobby[k] = !S.lobby[k];
-      if (k === 'blind' && S.lobby.blind) S.lobby.limited = false;
+
       savePrefs(); render();
     },
     start: startFlow,
@@ -1655,10 +1654,14 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     render();
   }
   /* 鍵盤:喺所選空格切換「當前筆記數字」 */
+  let lastMark = { i: -1, d: 0, t: 0 };
   function markNote() {
     if (!canAct() || S.sel < 0 || !S.noteDigit) return;
     const g = S.g, i = S.sel;
     if (g.puz[i] || g.v[i]) { say('這格已有數字,移到空格再標記'); return; }
+    const now = Date.now();
+    if (lastMark.i === i && lastMark.d === S.noteDigit && now - lastMark.t < 450 && (g.notes[i] & bit(S.noteDigit))) { lastMark.t = 0; inputDigit(S.noteDigit, false); return; } /* 快速連按兩下 = 填入 */
+    lastMark = { i, d: S.noteDigit, t: now };
     S.hint = null; pushUndo(g); g.notes[i] ^= bit(S.noteDigit);
     saveGame(); render();
   }
