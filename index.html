@@ -155,6 +155,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hero { text-align: center; }
 .hero h1 { font-weight: 900; font-size: clamp(64px, 18vw, 104px); letter-spacing: 0.1em; margin: 0; padding-left: 0.1em; line-height: 1.05; }
 .hero p { margin: 8px 0 0; color: var(--muted); letter-spacing: 0.08em; }
+.hero p.ver { margin-top: 4px; font-family: var(--num); font-size: 12px; letter-spacing: 0.06em; opacity: 0.75; }
 .fan { display: flex; justify-content: center; align-items: flex-end; gap: 6px; margin: 26px 0 6px; --tw: clamp(46px, 13vw, 60px); }
 .fan .tile:nth-child(1) { transform: rotate(-12deg) translateY(2px); }
 .fan .tile:nth-child(2) { transform: rotate(-6deg) translateY(-12px); }
@@ -210,32 +211,31 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cell.cb { border-bottom: 2px solid var(--grid); }
 .cell:nth-child(9n) { border-right: 0; }
 .cell:nth-child(n+73) { border-bottom: 0; }
-.cell.peer { background: var(--peer); }
+.cell.peer { background: var(--nm-peer); }
+.cell.bx { background: var(--nm-box); }
 .cell.nx { background-image: repeating-linear-gradient(135deg, transparent 0 5px, var(--line-2) 5px 6px); }
 .cell.hh { background: var(--hh); }
-.cell.same { background: var(--same); }
+.cell.same { background: var(--nm-same); }
 .cell.hp { background: var(--hp); box-shadow: inset 0 0 0 2px var(--ok-2); }
 .cell.he { background: var(--he); }
 .cell.ht { background: var(--ht); box-shadow: inset 0 0 0 2px var(--ok-2); }
 .cell.conf { background: var(--bad-bg); }
 .cell.conf b, .cell.wrong b { color: var(--bad); }
 .cell.wrong { background: var(--bad-bg); }
-.cell.sel { background: var(--hl); box-shadow: inset 0 0 0 2.5px var(--ink); z-index: 1; }
+.cell.sel { background: var(--nm-sel); box-shadow: inset 0 0 0 2.5px var(--nm-sel-line); z-index: 1; }
 .cell.sel b { color: var(--on-hl); }
+.board.nm .cell.sel::after { content: ""; position: absolute; inset: 3px; pointer-events: none; opacity: 1; background: var(--nm-peer);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30' preserveAspectRatio='none'%3E%3Cpath d='M10 0V30M20 0V30M0 10H30M0 20H30' stroke='black' stroke-width='1.5' stroke-dasharray='2 2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30' preserveAspectRatio='none'%3E%3Cpath d='M10 0V30M20 0V30M0 10H30M0 20H30' stroke='black' stroke-width='1.5' stroke-dasharray='2 2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
 .cell.sel.wrong b, .cell.sel.conf b { color: var(--bad-sel); }
 .cell .pv { color: var(--ok); opacity: 0.95; }
 .nt { position: absolute; inset: 2px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); font-family: var(--num); font-weight: 700; font-size: clamp(8px, 2.4vw, 13px); font-size: 2.6cqw; line-height: 1; color: var(--muted); font-style: normal; pointer-events: none; }
 .nt span { display: flex; align-items: center; justify-content: center; }
-.nt span.m { color: var(--on-hl); background: var(--hl); border-radius: 50%; }
+.nt span.m { color: var(--on-hl); background: var(--nm-sel); border-radius: 50%; }
 .nt span.x { color: var(--bad); text-decoration: line-through; }
 .cell.sel .nt { color: var(--on-hl); }
 @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.14); background-color: var(--hl); } 100% { transform: scale(1); } }
 .board { position: relative; }
-.board.nm .cell.peer { background: var(--nm-peer); }
-.board.nm .cell.bx { background: var(--nm-box); }
-.board.nm .cell.same { background: var(--nm-same); }
-.board.nm .cell.sel { background: var(--nm-sel); box-shadow: inset 0 0 0 2.5px var(--nm-sel-line); }
-.board.nm .nt span.m { background: var(--nm-sel); }
 .cell.pop { animation: pop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) both; animation-delay: var(--d, 0ms); z-index: 2; }
 .pause { position: absolute; inset: var(--tp); border-radius: 12px; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
 .pause h2 { margin: 0; font-weight: 900; font-size: 28px; letter-spacing: 0.06em; }
@@ -1140,7 +1140,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       if (showErr && v && marks.conf[i]) cls += ' conf';
       if (showErr && v && marks.wrong[i]) cls += ' wrong';
       if (i === sel) cls += ' sel';
-      if (S.noteMode && sel >= 0 && !S.paused && E.BX[i] === E.BX[sel] && r !== E.RW[sel] && c !== E.CL[sel]) cls += ' bx';
+      if (peers && E.BX[i] === E.BX[sel] && r !== E.RW[sel] && c !== E.CL[sel]) cls += ' bx';
       let inner = '';
       if (v) inner = `<b>${v}</b>`;
       else if (hm.tgt.has(i)) inner = `<b class="pv">${hm.tgt.get(i)}</b>`;
@@ -1273,7 +1273,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       <div class="srow"><div class="stx"><b>${label}</b><small>${sub}</small></div>
       <button class="sw" role="switch" aria-checked="${!!L[key]}" aria-label="${label}" ${disabled ? 'aria-disabled="true"' : ''} data-act="flag" data-v="${key}"><i></i></button></div>`;
     return `
-      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p>
+      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.1 · 2026-10-28</p>
       </div>
       <div class="panel">
         ${resume}
