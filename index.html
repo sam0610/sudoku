@@ -1700,10 +1700,16 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     if (S.noteMode) { if (S.noteDigit) { if (S.noteDigit !== d) { S.noteDigit = d; render(); } } else inputDigit(d, true); } else inputDigit(d, false);
   }
   /* 筆記模式已揀數字:點空格切換該格的筆記 */
+  /* 筆記模式:單點有數字嘅格,連同預設數字一齊轉為該數字 */
+  function adoptDigit(i) {
+    const g = S.g, d = g.puz[i] || g.v[i];
+    if (S.noteMode && d && g.v.filter((x) => x === d).length < 9) S.noteDigit = d;
+  }
   function noteTap(i) {
-    if (!(S.noteMode && S.noteDigit && canAct())) return;
+    if (!(S.noteMode && canAct())) return;
     const g = S.g;
-    if (g.puz[i] || g.v[i]) { S.sel = i; render(); return; }
+    if (g.puz[i] || g.v[i]) { S.sel = i; adoptDigit(i); render(); return; }
+    if (!S.noteDigit) return;
     S.hint = null; S.sel = i;
     pushUndo(g); g.notes[i] ^= bit(S.noteDigit);
     saveGame(); render();
@@ -1765,6 +1771,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
         }
         lastTap = { i, t: now };
       } else if (!(S.noteMode && S.noteDigit)) lastTap = { i: -1, t: 0 };
+      if (S.noteMode && (g.puz[i] || g.v[i])) { ptNote.i = i; ptNote.t = Date.now(); S.sel = i; adoptDigit(i); render(); return; }
       if (!(S.noteMode && S.noteDigit) || g.puz[i] || g.v[i]) return;
       ptNote.i = i; ptNote.t = Date.now();
       /* 筆記模式:快點兩下同一個空格 = 填入預設數字 */
