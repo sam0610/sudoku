@@ -45,6 +45,7 @@
   --he: #ffe2c0;
   --key: #151a24;
   --on-key: #ffffff;
+  --nm-line: #1f9d6b; --nm-peer: #c6e9d6; --nm-same: #aedcc2; --nm-sel: #8ccfab; --nm-sel-line: #1f9d6b; --nm-box: #f1faf5;
   --shade: rgba(21, 26, 36, 0.14);
   --scrim: rgba(21, 26, 36, 0.45);
   --ui: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
@@ -61,6 +62,7 @@
     --cell: #1b212b; --peer: #262e3b; --same: #4d4519; --mine: #8ab4ff;
     --hh: #17302a; --hp: #1a4535; --ht: #1f6a4c; --he: #4a3416;
     --key: #3a4354; --shade: rgba(0, 0, 0, 0.4); --scrim: rgba(0, 0, 0, 0.6);
+    --nm-line: #5fd3a2; --nm-peer: #2a4a3b; --nm-same: #33604b; --nm-sel: #3b7458; --nm-sel-line: #5fd3a2; --nm-box: #1b2623;
     color-scheme: dark;
   }
 }
@@ -72,6 +74,7 @@
   --cell: #1b212b; --peer: #262e3b; --same: #4d4519; --mine: #8ab4ff;
   --hh: #17302a; --hp: #1a4535; --ht: #1f6a4c; --he: #4a3416;
   --key: #3a4354; --shade: rgba(0, 0, 0, 0.4); --scrim: rgba(0, 0, 0, 0.6);
+  --nm-line: #5fd3a2; --nm-peer: #2a4a3b; --nm-same: #33604b; --nm-sel: #3b7458; --nm-sel-line: #5fd3a2; --nm-box: #1b2623;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -143,6 +146,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .srow .stx small { color: var(--muted); font-size: 13px; }
 
 /* ---------- 大廳 ---------- */
+.lockup { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 3vw, 22px); }
+.mark { --ms: clamp(76px, 22vw, 104px); width: var(--ms); height: var(--ms); flex: none; border-radius: 23%; background: var(--ink); display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--ms) * 0.04); padding: calc(var(--ms) * 0.115); box-shadow: 0 10px 18px var(--shade), 0 3px 0 rgba(0, 0, 0, 0.25); }
+.mark i { background: #e9edf3; border-radius: 22%; display: flex; align-items: center; justify-content: center; font-style: normal; font-weight: 900; font-size: calc(var(--ms) * 0.21); line-height: 1; color: #151a24; font-family: var(--tile-font); }
+.mark i.y { background: var(--hl); }
+.lockup h1 { font-size: clamp(56px, 17vw, 84px); padding-left: 0; letter-spacing: 0.06em; }
 .lobby { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 3vh 0 24px; }
 .hero { text-align: center; }
 .hero h1 { font-weight: 900; font-size: clamp(64px, 18vw, 104px); letter-spacing: 0.1em; margin: 0; padding-left: 0.1em; line-height: 1.05; }
@@ -165,8 +173,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (min-width: 900px) {
   .lobby { flex-direction: row; justify-content: center; align-items: center; gap: clamp(32px, 7vw, 110px); min-height: calc(100dvh - 32px); padding: 0; }
   .hero { text-align: left; }
-  .hero h1 { font-size: clamp(110px, 12vw, 160px); padding-left: 0; }
-  .fan { justify-content: flex-start; --tw: clamp(52px, 5.2vw, 68px); padding-left: 8px; }
+  .lockup { justify-content: flex-start; gap: 26px; }
+  .mark { --ms: clamp(124px, 10vw, 150px); }
+  .lockup h1 { font-size: clamp(88px, 8.4vw, 124px); }
   .panel { flex: 0 0 460px; }
 }
 
@@ -221,6 +230,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .nt span.x { color: var(--bad); text-decoration: line-through; }
 .cell.sel .nt { color: var(--on-hl); }
 @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.14); background-color: var(--hl); } 100% { transform: scale(1); } }
+.board { position: relative; }
+.board.nm .cell.peer { background: var(--nm-peer); }
+.board.nm .cell.bx { background: var(--nm-box); }
+.board.nm .cell.same { background: var(--nm-same); }
+.board.nm .cell.sel { background: var(--nm-sel); box-shadow: inset 0 0 0 2.5px var(--nm-sel-line); }
+.board.nm .nt span.m { background: var(--nm-sel); }
 .cell.pop { animation: pop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) both; animation-delay: var(--d, 0ms); z-index: 2; }
 .pause { position: absolute; inset: var(--tp); border-radius: 12px; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
 .pause h2 { margin: 0; font-weight: 900; font-size: 28px; letter-spacing: 0.06em; }
@@ -1106,8 +1121,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     const showErr = S.set.err && !g.flags.blind;
     const sel = S.sel, hl = S.set.hl, nd = S.noteMode ? S.noteDigit : 0;
     const sv = nd || (sel >= 0 ? g.v[sel] : 0);
-    let nx = null;
-    if (nd) { nx = new Set(); for (let k = 0; k < 81; k++) if (g.v[k] === nd) for (const p of E.PEERS[k]) if (!g.v[p]) nx.add(p); }
+    const nx = null; /* 筆記數字模式不再用斜線標示衝突格 */
     const marks = computeMarks(g), hm = hintMarks(S.hint);
     const peers = sel >= 0 && hl !== 'off' ? new Set(E.PEERS[sel]) : null;
     for (let i = 0; i < 81; i++) {
@@ -1126,6 +1140,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       if (showErr && v && marks.conf[i]) cls += ' conf';
       if (showErr && v && marks.wrong[i]) cls += ' wrong';
       if (i === sel) cls += ' sel';
+      if (S.noteMode && sel >= 0 && !S.paused && E.BX[i] === E.BX[sel] && r !== E.RW[sel] && c !== E.CL[sel]) cls += ' bx';
       let inner = '';
       if (v) inner = `<b>${v}</b>`;
       else if (hm.tgt.has(i)) inner = `<b class="pv">${hm.tgt.get(i)}</b>`;
@@ -1151,6 +1166,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
         el.setAttribute('aria-pressed', i === sel ? 'true' : 'false');
       }
     }
+    $('#board').classList.toggle('nm', !!S.noteMode);
     $('#tray').classList.toggle('paused', S.paused);
     $('#board').classList.toggle('won', g.status === 'won');
     $('#pause').hidden = !S.paused;
@@ -1257,8 +1273,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       <div class="srow"><div class="stx"><b>${label}</b><small>${sub}</small></div>
       <button class="sw" role="switch" aria-checked="${!!L[key]}" aria-label="${label}" ${disabled ? 'aria-disabled="true"' : ''} data-act="flag" data-v="${key}"><i></i></button></div>`;
     return `
-      <div class="hero"><h1>數獨</h1><p>邏輯推理 · 每題唯一解</p>
-        <div class="fan" aria-hidden="true">${[[1, 'c0'], [9, 'c1'], [5, 'c2'], [3, 'c3'], [7, 'c0']].map(([n, c]) => `<span class="tile ${c}"><b>${n}</b></span>`).join('')}</div>
+      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p>
       </div>
       <div class="panel">
         ${resume}
@@ -1773,6 +1788,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       else if (act === 'mark') {
         e.preventDefault();
         if (!S.noteMode) toggleNote();
+        else if (S.sel >= 0 && (S.g.puz[S.sel] || S.g.v[S.sel])) { S.noteMode = false; S.noteDigit = 0; render(); }
         else if (S.noteDigit) markNote();
         else say('先選一個有數字的格再按此鍵進入數字筆記,或直接按數字鍵寫筆記');
       }
