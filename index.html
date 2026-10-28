@@ -1,0 +1,1684 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>魔橋數獨</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600;700&family=Orbitron:wght@700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* 版面:大廳(標題 + 設定面板)→ 牌局(頂列、盤面托盤、工具列、數字牌)。手機單欄,桌面雙欄。
+   風格沿用魔橋:冷灰底、白色扁平面板、螢光筆黃標示選取、Orbitron 牌面數字。 */
+:root {
+  --bg: #e9edf3;
+  --surface: #ffffff;
+  --surface-2: #f6f8fb;
+  --tray: #dde3ec;
+  --line: #d6dce6;
+  --line-2: #c0c9d8;
+  --ink: #151a24;
+  --on-ink: #ffffff;
+  --muted: #4b5568;
+  --grid: #151a24;
+  --hl: #ffd43b;
+  --hl-line: #f5b700;
+  --on-hl: #151a24;
+  --ok: #0f7b4f;
+  --ok-2: #1f9d6b;
+  --bad: #b3261e;
+  --bad-bg: #fde4e1;
+  --bad-line: #e2b4b0;
+  --bad-sel: #b3261e;
+  --t-red: #d62839;
+  --t-blue: #1f5fd6;
+  --t-black: #151a24;
+  --t-orange: #e8710a;
+  --cell: #ffffff;
+  --peer: #e6ebf3;
+  --same: #ffe98a;
+  --mine: #1f5fd6;
+  --hh: #e6f6ee;
+  --hp: #c9ecda;
+  --ht: #a7e2c3;
+  --he: #ffe2c0;
+  --key: #151a24;
+  --on-key: #ffffff;
+  --shade: rgba(21, 26, 36, 0.14);
+  --scrim: rgba(21, 26, 36, 0.45);
+  --ui: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
+  --num: 'DM Sans', 'Noto Sans TC', system-ui, sans-serif;
+  --tile-font: 'Orbitron', 'DM Sans', system-ui, sans-serif;
+  --tw: clamp(40px, 11vw, 56px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161d; --surface: #1b212b; --surface-2: #161b24; --tray: #232a36; --line: #2e3644; --line-2: #3b4556;
+    --ink: #e9edf3; --on-ink: #12161d; --muted: #9aa5b8; --grid: #7f8ca3;
+    --ok: #5fd9a2; --ok-2: #35c58a; --bad: #ff8d82; --bad-bg: #3a1f23; --bad-line: #6b3338; --bad-sel: #8f1d17;
+    --t-red: #e0485a; --t-blue: #4d86f0; --t-black: #3a4354; --t-orange: #f08a2a;
+    --cell: #1b212b; --peer: #262e3b; --same: #4d4519; --mine: #8ab4ff;
+    --hh: #17302a; --hp: #1a4535; --ht: #1f6a4c; --he: #4a3416;
+    --key: #3a4354; --shade: rgba(0, 0, 0, 0.4); --scrim: rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1b212b; --surface-2: #161b24; --tray: #232a36; --line: #2e3644; --line-2: #3b4556;
+  --ink: #e9edf3; --on-ink: #12161d; --muted: #9aa5b8; --grid: #7f8ca3;
+  --ok: #5fd9a2; --ok-2: #35c58a; --bad: #ff8d82; --bad-bg: #3a1f23; --bad-line: #6b3338; --bad-sel: #8f1d17;
+  --t-red: #e0485a; --t-blue: #4d86f0; --t-black: #3a4354; --t-orange: #f08a2a;
+  --cell: #1b212b; --peer: #262e3b; --same: #4d4519; --mine: #8ab4ff;
+  --hh: #17302a; --hp: #1a4535; --ht: #1f6a4c; --he: #4a3416;
+  --key: #3a4354; --shade: rgba(0, 0, 0, 0.4); --scrim: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--ui);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 18px;
+}
+#app { min-height: 100%; min-width: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.screen { min-width: 0; }
+
+/* ---------- 牌(沿用魔橋) ---------- */
+.tile {
+  width: var(--tw); height: calc(var(--tw) * 1.32); border-radius: calc(var(--tw) * 0.17);
+  background: var(--tc, var(--t-black)); border: 1.5px solid var(--tc, var(--t-black));
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), 0 6px 10px var(--shade);
+  display: flex; align-items: center; justify-content: center; color: #ffffff;
+  font-family: var(--tile-font); font-weight: 700; flex: 0 0 auto; user-select: none;
+}
+.tile b { font-size: calc(var(--tw) * 0.5); line-height: 1; font-weight: 700; }
+.tile.c0 { --tc: var(--t-red); }
+.tile.c1 { --tc: var(--t-blue); }
+.tile.c2 { --tc: var(--t-black); }
+.tile.c3 { --tc: var(--t-orange); }
+
+/* ---------- 按鈕、開關 ---------- */
+.btn {
+  border: 1px solid var(--line-2); background: var(--surface); color: var(--ink);
+  padding: 0.5em 1em; border-radius: 10px; font-weight: 500; white-space: nowrap; min-height: 40px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: var(--on-ink); font-weight: 700; }
+.btn.primary:hover:not(:disabled) { opacity: 0.9; background: var(--ink); }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 0.25em 0.8em; font-size: 14px; min-height: 36px; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn svg, .tool svg, .iconbtn svg { flex: none; }
+.iconbtn {
+  width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface);
+  display: inline-flex; align-items: center; justify-content: center; padding: 0;
+}
+.iconbtn:hover { background: var(--surface-2); }
+.sw { width: 46px; height: 28px; border-radius: 99px; border: 1px solid var(--line-2); background: var(--surface-2); position: relative; padding: 0; flex: none; transition: background 0.15s; }
+.sw i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); transition: transform 0.15s, background 0.15s; }
+.sw[aria-checked="true"] { background: var(--hl); border-color: var(--hl-line); }
+.sw[aria-checked="true"] i { transform: translateX(18px); background: var(--on-hl); }
+.sw[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; max-width: 100%; }
+.seg button { border: 0; background: transparent; padding: 0.5em 1em; color: var(--muted); min-height: 40px; }
+.seg button + button { border-left: 1px solid var(--line-2); }
+.seg button.on { background: var(--hl); color: var(--on-hl); font-weight: 700; }
+.hint-text { margin: 0; font-size: 13px; color: var(--muted); }
+.sep { height: 1px; background: var(--line); border: 0; margin: 0; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row > .grow { flex: 1 1 120px; min-width: 0; }
+.srow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.srow .stx { display: flex; flex-direction: column; min-width: 0; }
+.srow .stx b { font-weight: 700; }
+.srow .stx small { color: var(--muted); font-size: 13px; }
+
+/* ---------- 大廳 ---------- */
+.lobby { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 3vh 0 24px; }
+.hero { text-align: center; }
+.hero h1 { font-weight: 900; font-size: clamp(64px, 18vw, 104px); letter-spacing: 0.1em; margin: 0; padding-left: 0.1em; line-height: 1.05; }
+.hero p { margin: 8px 0 0; color: var(--muted); letter-spacing: 0.08em; }
+.fan { display: flex; justify-content: center; align-items: flex-end; gap: 6px; margin: 26px 0 6px; --tw: clamp(46px, 13vw, 60px); }
+.fan .tile:nth-child(1) { transform: rotate(-12deg) translateY(2px); }
+.fan .tile:nth-child(2) { transform: rotate(-6deg) translateY(-12px); }
+.fan .tile:nth-child(3) { transform: translateY(-22px) scale(1.08); z-index: 1; }
+.fan .tile:nth-child(4) { transform: rotate(6deg) translateY(-12px); }
+.fan .tile:nth-child(5) { transform: rotate(12deg) translateY(2px); }
+.panel {
+  width: min(100%, 460px); background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 20px;
+  display: flex; flex-direction: column; gap: 16px; box-shadow: 0 14px 36px var(--shade);
+}
+.panel h2 { margin: 0 0 8px; font-size: 14px; font-weight: 700; letter-spacing: 0.06em; }
+.panel .flags { display: flex; flex-direction: column; gap: 12px; }
+.resume { display: flex; align-items: center; gap: 10px; justify-content: space-between; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.resume .rt { display: flex; flex-direction: column; min-width: 0; font-size: 13px; color: var(--muted); }
+.resume .rt b { color: var(--ink); font-size: 14px; }
+@media (min-width: 900px) {
+  .lobby { flex-direction: row; justify-content: center; align-items: center; gap: clamp(32px, 7vw, 110px); min-height: 100%; padding: 0 0 4vh; }
+  .hero { text-align: left; }
+  .hero h1 { font-size: clamp(110px, 12vw, 160px); padding-left: 0; }
+  .fan { justify-content: flex-start; --tw: clamp(52px, 5.2vw, 68px); padding-left: 8px; }
+  .panel { flex: 0 0 460px; }
+}
+
+/* ---------- 牌局 ---------- */
+.game { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.top { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; min-width: 0; }
+.top .title { font-weight: 900; font-size: 24px; letter-spacing: 0.06em; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; white-space: nowrap; }
+.pill b { font-weight: 700; }
+.pill.hlp { background: var(--hl); border-color: var(--ink); color: var(--on-hl); }
+.top .sp { flex: 1 1 0; min-width: 0; }
+.timer { font-family: var(--num); font-weight: 700; font-size: 17px; padding: 4px 14px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); font-variant-numeric: tabular-nums; min-width: 78px; text-align: center; }
+.timer.low { background: var(--bad-bg); border-color: var(--bad-line); color: var(--bad); }
+.play { --bs: min(100%, 600px); display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); justify-items: center; }
+.boardcol { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+.tray { --tp: 10px; position: relative; width: var(--bs); background: var(--tray); padding: var(--tp); border-radius: 22px; }
+.board {
+  width: 100%; aspect-ratio: 1; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr);
+  background: var(--cell); border: 2px solid var(--grid); border-radius: 10px; overflow: hidden; container-type: inline-size; outline: none;
+}
+.tray.paused .board { visibility: hidden; }
+.board.won { box-shadow: 0 0 0 4px var(--ok-2); }
+.cell {
+  position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0;
+  background: var(--cell); border-right: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2);
+  font-family: var(--tile-font); font-weight: 700; font-size: clamp(16px, 5vw, 30px); font-size: 5.3cqw; line-height: 1;
+  color: var(--ink); cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.cell b { font-weight: 700; }
+.cell.user { color: var(--mine); }
+.cell.cr { border-right: 2px solid var(--grid); }
+.cell.cb { border-bottom: 2px solid var(--grid); }
+.cell:nth-child(9n) { border-right: 0; }
+.cell:nth-child(n+73) { border-bottom: 0; }
+.cell.peer { background: var(--peer); }
+.cell.nx { background-image: repeating-linear-gradient(135deg, transparent 0 5px, var(--line-2) 5px 6px); }
+.cell.hh { background: var(--hh); }
+.cell.same { background: var(--same); }
+.cell.hp { background: var(--hp); box-shadow: inset 0 0 0 2px var(--ok-2); }
+.cell.he { background: var(--he); }
+.cell.ht { background: var(--ht); box-shadow: inset 0 0 0 2px var(--ok-2); }
+.cell.conf { background: var(--bad-bg); }
+.cell.conf b, .cell.wrong b { color: var(--bad); }
+.cell.wrong { background: var(--bad-bg); }
+.cell.sel { background: var(--hl); box-shadow: inset 0 0 0 2.5px var(--ink); z-index: 1; }
+.cell.sel b { color: var(--on-hl); }
+.cell.sel.wrong b, .cell.sel.conf b { color: var(--bad-sel); }
+.cell .pv { color: var(--ok); opacity: 0.95; }
+.nt { position: absolute; inset: 2px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); font-family: var(--num); font-weight: 700; font-size: clamp(8px, 2.4vw, 13px); font-size: 2.6cqw; line-height: 1; color: var(--muted); font-style: normal; pointer-events: none; }
+.nt span { display: flex; align-items: center; justify-content: center; }
+.nt span.m { color: var(--on-hl); background: var(--hl); border-radius: 50%; }
+.nt span.x { color: var(--bad); text-decoration: line-through; }
+.cell.sel .nt { color: var(--on-hl); }
+@keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.14); background-color: var(--hl); } 100% { transform: scale(1); } }
+.cell.pop { animation: pop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) both; animation-delay: var(--d, 0ms); z-index: 2; }
+.pause { position: absolute; inset: var(--tp); border-radius: 12px; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+.pause h2 { margin: 0; font-weight: 900; font-size: 28px; letter-spacing: 0.06em; }
+.chips { display: flex; gap: 6px 8px; flex-wrap: wrap; justify-content: center; font-size: 13px; width: var(--bs); }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 2px 12px; color: var(--muted); white-space: nowrap; }
+.chip b { color: var(--ink); font-family: var(--num); font-size: 14px; }
+.chip.bad { background: var(--bad-bg); border-color: var(--bad-line); color: var(--bad); }
+.chip.bad b { color: var(--bad); }
+.chip.on { background: var(--hl); border-color: var(--hl-line); color: var(--on-hl); font-weight: 700; }
+.chip.on b { color: var(--on-hl); }
+.side { width: min(100%, 560px); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+/* 提示面板(沿用魔橋的輔助框) */
+.assist { background: var(--surface); border: 1.5px solid var(--ok-2); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.assist .ah { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.assist .ah b { font-size: 15px; color: var(--ok); }
+.assist .ah span { font-size: 12px; color: var(--muted); }
+.assist p { margin: 0; line-height: 1.55; }
+.assist .ar2 { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+.assist .btn.apply { border-color: var(--ok-2); color: var(--ok); font-weight: 700; }
+
+/* 工具列 */
+.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.tool {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; padding: 4px 2px;
+  border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); color: var(--ink); font-size: 12px; font-weight: 500;
+}
+.tool:hover:not(:disabled) { background: var(--surface-2); }
+.tool:disabled { opacity: 0.4; cursor: not-allowed; }
+.tool.on { background: var(--hl); border-color: var(--hl-line); color: var(--on-hl); font-weight: 700; }
+
+/* 數字牌 */
+.pad { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; width: var(--bs); }
+.key {
+  position: relative; width: 100%; aspect-ratio: 1 / 1.34; border: 1.5px solid var(--key); border-radius: 17%;
+  background: var(--key); color: var(--on-key); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), 0 6px 10px var(--shade);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0;
+  font-family: var(--tile-font); font-weight: 700; user-select: none; -webkit-user-select: none; touch-action: manipulation; -webkit-touch-callout: none;
+  transition: transform 0.08s;
+}
+.key .kd { font-size: clamp(18px, 5.4vw, 28px); line-height: 1; }
+.key .kr { font-family: var(--num); font-size: 11px; font-weight: 700; opacity: 0.75; line-height: 1; }
+.key:active:not(.done) { transform: translateY(2px); }
+.key.on { transform: translateY(-5px); box-shadow: 0 0 0 2.5px var(--hl), 0 10px 14px var(--shade); }
+.key.noting { background: var(--surface); color: var(--ink); border: 1.5px dashed var(--ink); box-shadow: 0 2px 0 var(--line-2); }
+.key.done { background: var(--surface); color: var(--muted); border-color: var(--line-2); box-shadow: 0 2px 0 var(--line-2); cursor: default; opacity: 0.7; }
+.key.done .kr { color: var(--ok); opacity: 1; }
+
+@media (min-width: 900px) {
+  .play { --bs: min(calc((100dvh - 150px) * 0.88), 740px); grid-template-columns: auto minmax(320px, 380px); align-items: start; justify-content: center; gap: 28px; justify-items: stretch; }
+  .boardcol { width: auto; }
+  .side { width: 100%; }
+  .pad { gap: 8px; }
+  .key { aspect-ratio: 1 / 1.1; }
+  .key .kd { font-size: 34px; }
+  .key .kr { font-size: 12px; }
+  .tool { min-height: 56px; font-size: 13px; }
+}
+@media (max-width: 600px) {
+  .play {
+    --bl: calc(max(16px, env(safe-area-inset-left, 0px)) - max(8px, env(safe-area-inset-left, 0px)));
+    --br: calc(max(16px, env(safe-area-inset-right, 0px)) - max(8px, env(safe-area-inset-right, 0px)));
+  }
+  .tray { --tp: 4px; width: auto; align-self: stretch; margin-left: calc(-1 * var(--bl)); margin-right: calc(-1 * var(--br)); border-radius: 14px; }
+  .board { border-radius: 8px; }
+  .chips { width: 100%; }
+  .pad { width: 100%; }
+}
+@media (max-width: 420px) {
+  .pad { gap: 4px; }
+  .top .title { font-size: 20px; }
+}
+
+/* ---------- 浮層 ---------- */
+.overlay { position: fixed; inset: 0; background: var(--scrim); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; overflow: auto; }
+.card { width: min(100%, 540px); max-height: 100%; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28); outline: none; }
+.card h2 { margin: 0; font-weight: 900; font-size: 26px; letter-spacing: 0.03em; }
+.card h3 { margin: 0 0 6px; font-size: 14px; letter-spacing: 0.04em; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.card .ctl { display: flex; flex-direction: column; gap: 14px; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fact { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.fact small { color: var(--muted); font-size: 12px; }
+.fact b { font-family: var(--num); font-size: 20px; font-variant-numeric: tabular-nums; }
+.stack { display: flex; height: 14px; border-radius: 99px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); }
+.stack i { display: block; min-width: 0; }
+.legend { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 14px; }
+.legend div { display: flex; align-items: center; gap: 8px; }
+.legend em { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.legend span { margin-left: auto; font-family: var(--num); font-weight: 700; }
+.chipline { display: flex; flex-wrap: wrap; gap: 6px; }
+.chipline .chip { color: var(--ink); }
+.meter { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.meter .bar { flex: 1; height: 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.meter .bar i { display: block; height: 100%; background: var(--ink); }
+.meter b { font-family: var(--num); font-size: 18px; color: var(--ink); }
+.newbest { background: var(--hl); color: var(--on-hl); font-weight: 700; font-size: 12px; padding: 2px 10px; border-radius: 99px; align-self: flex-start; }
+.sgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.scard { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+.scard h3 { margin: 0; font-size: 15px; }
+.scard .big { font-family: var(--num); font-weight: 700; font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.scard dl { margin: 6px 0 0; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: 13px; color: var(--muted); }
+.scard dd { margin: 0; color: var(--ink); font-family: var(--num); font-weight: 700; text-align: right; }
+.scard dt { margin: 0; }
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+.busy .bar { width: 100%; height: 8px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.busy .bar i { display: block; width: 40%; height: 100%; background: var(--ink); animation: slide 1.1s ease-in-out infinite; }
+#toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--on-ink); padding: 8px 16px; border-radius: 12px; z-index: 80; max-width: min(92vw, 420px); font-size: 14px; display: none; text-align: center; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div id="app">
+  <div id="lobby" class="screen lobby"></div>
+  <div id="game" class="screen game" hidden>
+    <div class="top" id="top"></div>
+    <div class="play">
+      <div class="boardcol">
+        <div class="tray" id="tray">
+          <div class="board" id="board" role="group" aria-label="數獨盤面" tabindex="0"></div>
+          <div class="pause" id="pause" hidden>
+            <h2>已暫停</h2>
+            <p class="hint-text">盤面已隱藏,計時停止。</p>
+            <button class="btn primary" data-act="pause">繼續</button>
+          </div>
+        </div>
+        <div class="pad" id="pad"></div>
+        <div class="chips" id="status"></div>
+      </div>
+      <div class="side">
+        <div class="assist" id="hint" hidden></div>
+        <div class="tools" id="tools"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="modal"></div>
+<div id="toast" role="status"></div>
+
+<script>
+/* ====== 數獨引擎(純函式,無 DOM)======
+   以函式包起來,讓網頁主程式與 Web Worker 共用同一份原始碼。 */
+function SudokuEngine() {
+  'use strict';
+  const ALL = 0x1ff;
+  const POP = new Uint8Array(512);
+  for (let m = 1; m < 512; m++) POP[m] = POP[m >> 1] + (m & 1);
+  const lowIdx = (m) => 31 - Math.clz32(m & -m);
+  const digitsOf = (m) => { const a = []; for (let d = 1; d <= 9; d++) if (m & (1 << (d - 1))) a.push(d); return a; };
+
+  const RW = new Uint8Array(81), CL = new Uint8Array(81), BX = new Uint8Array(81);
+  for (let i = 0; i < 81; i++) {
+    RW[i] = (i / 9) | 0; CL[i] = i % 9;
+    BX[i] = ((RW[i] / 3) | 0) * 3 + ((CL[i] / 3) | 0);
+  }
+  /* 0-8 行(橫)、9-17 列(直)、18-26 宮 */
+  const HOUSES = [];
+  for (let r = 0; r < 9; r++) HOUSES.push(Array.from({ length: 9 }, (_, k) => r * 9 + k));
+  for (let c = 0; c < 9; c++) HOUSES.push(Array.from({ length: 9 }, (_, k) => k * 9 + c));
+  for (let b = 0; b < 9; b++) {
+    const r0 = ((b / 3) | 0) * 3, c0 = (b % 3) * 3;
+    HOUSES.push(Array.from({ length: 9 }, (_, k) => (r0 + ((k / 3) | 0)) * 9 + c0 + (k % 3)));
+  }
+  const HOUSE_OF = Array.from({ length: 81 }, (_, i) => [RW[i], 9 + CL[i], 18 + BX[i]]);
+  const PEERS = Array.from({ length: 81 }, (_, i) => {
+    const s = new Set();
+    for (const h of HOUSE_OF[i]) for (const j of HOUSES[h]) if (j !== i) s.add(j);
+    return Array.from(s);
+  });
+  const SEES = new Uint8Array(81 * 81);
+  for (let i = 0; i < 81; i++) for (const j of PEERS[i]) SEES[i * 81 + j] = 1;
+  const houseInfo = (h) => ({ t: h < 9 ? 'row' : h < 18 ? 'col' : 'box', n: h % 9 });
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ---------- 回溯搜尋:計算解的數量(最多 limit 個),可隨機 ---------- */
+  function search(vals, limit, rand) {
+    const v = Int8Array.from(vals);
+    const rows = new Int16Array(9), cols = new Int16Array(9), boxes = new Int16Array(9);
+    for (let i = 0; i < 81; i++) {
+      const d = v[i];
+      if (d) {
+        const b = 1 << (d - 1);
+        if ((rows[RW[i]] | cols[CL[i]] | boxes[BX[i]]) & b) return { count: 0, sol: null };
+        rows[RW[i]] |= b; cols[CL[i]] |= b; boxes[BX[i]] |= b;
+      }
+    }
+    let count = 0, sol = null;
+    const dfs = () => {
+      let best = -1, bm = 0, bn = 10;
+      for (let i = 0; i < 81; i++) {
+        if (v[i]) continue;
+        const m = ALL & ~(rows[RW[i]] | cols[CL[i]] | boxes[BX[i]]);
+        const n = POP[m];
+        if (n < bn) { bn = n; best = i; bm = m; if (n <= 1) break; }
+      }
+      if (best < 0) { count++; if (!sol) sol = Int8Array.from(v); return; }
+      if (bn === 0) return;
+      const r = RW[best], c = CL[best], x = BX[best];
+      const ds = [];
+      for (let m = bm; m; m &= m - 1) ds.push(lowIdx(m));
+      if (rand) shuffle(ds);
+      for (let q = 0; q < ds.length; q++) {
+        const b = 1 << ds[q];
+        v[best] = ds[q] + 1; rows[r] |= b; cols[c] |= b; boxes[x] |= b;
+        dfs();
+        v[best] = 0; rows[r] &= ~b; cols[c] &= ~b; boxes[x] &= ~b;
+        if (count >= limit) return;
+      }
+    };
+    dfs();
+    return { count, sol };
+  }
+
+  /* ---------- 候選數狀態 ---------- */
+  function makeState(vals, elim) {
+    const v = Int8Array.from(vals), c = new Int16Array(81);
+    const rows = new Int16Array(9), cols = new Int16Array(9), boxes = new Int16Array(9);
+    for (let i = 0; i < 81; i++) if (v[i]) { const b = 1 << (v[i] - 1); rows[RW[i]] |= b; cols[CL[i]] |= b; boxes[BX[i]] |= b; }
+    for (let i = 0; i < 81; i++) if (!v[i]) c[i] = ALL & ~(rows[RW[i]] | cols[CL[i]] | boxes[BX[i]]) & ~(elim ? elim[i] | 0 : 0);
+    return { v, c };
+  }
+  function place(st, i, d) {
+    st.v[i] = d; st.c[i] = 0;
+    const nb = ~(1 << (d - 1));
+    const p = PEERS[i];
+    for (let k = 0; k < p.length; k++) st.c[p[k]] &= nb;
+  }
+  function candidates(vals, elim) { return Array.from(makeState(vals, elim).c); }
+
+  /* ---------- 技巧 ---------- */
+  const TECH = {
+    ns: { name: '唯一候選數', tier: 1, w: 1 },
+    hs: { name: '隱性單數', tier: 1, w: 2 },
+    lcp: { name: '區塊摒除', tier: 2, w: 3.5 },
+    lcc: { name: '區塊摒除', tier: 2, w: 4 },
+    np: { name: '顯性數對', tier: 2, w: 4.5 },
+    hp: { name: '隱性數對', tier: 3, w: 5.5 },
+    nt: { name: '顯性三數組', tier: 3, w: 6 },
+    xw: { name: 'X-Wing', tier: 4, w: 7 },
+    xyw: { name: 'XY-Wing', tier: 4, w: 8 },
+  };
+
+  function findNS(st) {
+    for (let i = 0; i < 81; i++) {
+      if (!st.v[i] && POP[st.c[i]] === 1) {
+        const d = lowIdx(st.c[i]) + 1;
+        return { tech: 'ns', place: [{ i, d }], elim: [], cells: [i], digits: [d], house: null };
+      }
+    }
+    return null;
+  }
+
+  const HS_ORDER = [];
+  for (let h = 18; h < 27; h++) HS_ORDER.push(h);
+  for (let h = 0; h < 18; h++) HS_ORDER.push(h);
+  function findHS(st) {
+    for (const h of HS_ORDER) {
+      const cells = HOUSES[h];
+      for (let d = 1; d <= 9; d++) {
+        const b = 1 << (d - 1);
+        let cnt = 0, at = -1;
+        for (let k = 0; k < 9; k++) if (st.c[cells[k]] & b) { cnt++; at = cells[k]; }
+        if (cnt === 1) return { tech: 'hs', place: [{ i: at, d }], elim: [], cells: [at], digits: [d], house: houseInfo(h) };
+      }
+    }
+    return null;
+  }
+
+  /* 區塊摒除(宮 → 行/列) */
+  function findLCP(st) {
+    for (let bx = 0; bx < 9; bx++) {
+      const cells = HOUSES[18 + bx];
+      for (let d = 1; d <= 9; d++) {
+        const b = 1 << (d - 1);
+        const at = cells.filter((i) => st.c[i] & b);
+        if (at.length < 2) continue;
+        const sameRow = at.every((i) => RW[i] === RW[at[0]]);
+        const sameCol = at.every((i) => CL[i] === CL[at[0]]);
+        if (!sameRow && !sameCol) continue;
+        const line = sameRow ? RW[at[0]] : 9 + CL[at[0]];
+        const elim = HOUSES[line].filter((i) => BX[i] !== bx && (st.c[i] & b)).map((i) => ({ i, d }));
+        if (elim.length) return { tech: 'lcp', place: [], elim, cells: at, digits: [d], house: houseInfo(18 + bx), line: houseInfo(line) };
+      }
+    }
+    return null;
+  }
+  /* 區塊摒除(行/列 → 宮) */
+  function findLCC(st) {
+    for (let h = 0; h < 18; h++) {
+      const cells = HOUSES[h];
+      for (let d = 1; d <= 9; d++) {
+        const b = 1 << (d - 1);
+        const at = cells.filter((i) => st.c[i] & b);
+        if (at.length < 2) continue;
+        if (!at.every((i) => BX[i] === BX[at[0]])) continue;
+        const bx = BX[at[0]];
+        const elim = HOUSES[18 + bx].filter((i) => !cells.includes(i) && (st.c[i] & b)).map((i) => ({ i, d }));
+        if (elim.length) return { tech: 'lcc', place: [], elim, cells: at, digits: [d], house: houseInfo(h), box: houseInfo(18 + bx) };
+      }
+    }
+    return null;
+  }
+
+  /* 顯性數對(N=2)/三數組(N=3) */
+  function findNaked(st, N) {
+    for (let h = 0; h < 27; h++) {
+      const cells = HOUSES[h].filter((i) => !st.v[i] && POP[st.c[i]] >= 2 && POP[st.c[i]] <= N);
+      if (cells.length < N) continue;
+      const combo = [];
+      let found = null;
+      const rec = (start, mask) => {
+        if (found) return;
+        if (combo.length === N) {
+          if (POP[mask] !== N) return;
+          const elim = [];
+          for (const j of HOUSES[h]) {
+            if (st.v[j] || combo.includes(j) || !(st.c[j] & mask)) continue;
+            for (const d of digitsOf(st.c[j] & mask)) elim.push({ i: j, d });
+          }
+          if (elim.length) found = { tech: N === 2 ? 'np' : 'nt', place: [], elim, cells: combo.slice(), digits: digitsOf(mask), house: houseInfo(h) };
+          return;
+        }
+        for (let k = start; k < cells.length && !found; k++) {
+          const nm = mask | st.c[cells[k]];
+          if (POP[nm] > N) continue;
+          combo.push(cells[k]); rec(k + 1, nm); combo.pop();
+        }
+      };
+      rec(0, 0);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  /* 隱性數對 */
+  function findHP(st) {
+    for (let h = 0; h < 27; h++) {
+      const cells = HOUSES[h];
+      const pm = new Array(10).fill(0);
+      for (let d = 1; d <= 9; d++) {
+        const b = 1 << (d - 1);
+        for (let k = 0; k < 9; k++) if (st.c[cells[k]] & b) pm[d] |= 1 << k;
+      }
+      for (let a = 1; a <= 8; a++) {
+        if (POP[pm[a]] !== 2) continue;
+        for (let b2 = a + 1; b2 <= 9; b2++) {
+          if (pm[b2] !== pm[a]) continue;
+          const pair = [];
+          for (let k = 0; k < 9; k++) if (pm[a] & (1 << k)) pair.push(cells[k]);
+          const keep = (1 << (a - 1)) | (1 << (b2 - 1));
+          const elim = [];
+          for (const i of pair) for (const d of digitsOf(st.c[i] & ~keep)) elim.push({ i, d });
+          if (elim.length) return { tech: 'hp', place: [], elim, cells: pair, digits: [a, b2], house: houseInfo(h) };
+        }
+      }
+    }
+    return null;
+  }
+
+  /* X-Wing */
+  function findXW(st) {
+    for (let d = 1; d <= 9; d++) {
+      const b = 1 << (d - 1);
+      for (const byRow of [true, false]) {
+        const lines = [];
+        for (let a = 0; a < 9; a++) {
+          let pos = 0;
+          for (let k = 0; k < 9; k++) { const i = byRow ? a * 9 + k : k * 9 + a; if (st.c[i] & b) pos |= 1 << k; }
+          if (POP[pos] === 2) lines.push([a, pos]);
+        }
+        for (let x = 0; x < lines.length; x++) {
+          for (let y = x + 1; y < lines.length; y++) {
+            if (lines[x][1] !== lines[y][1]) continue;
+            const pos = lines[x][1], a1 = lines[x][0], a2 = lines[y][0];
+            const covers = [];
+            for (let k = 0; k < 9; k++) if (pos & (1 << k)) covers.push(k);
+            const elim = [];
+            for (const k of covers) for (let a = 0; a < 9; a++) {
+              if (a === a1 || a === a2) continue;
+              const i = byRow ? a * 9 + k : k * 9 + a;
+              if (st.c[i] & b) elim.push({ i, d });
+            }
+            if (elim.length) {
+              const cells = [];
+              for (const a of [a1, a2]) for (const k of covers) cells.push(byRow ? a * 9 + k : k * 9 + a);
+              return { tech: 'xw', place: [], elim, cells, digits: [d], house: null, base: byRow ? 'row' : 'col', lines: [a1, a2], covers };
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /* XY-Wing */
+  function findXYW(st) {
+    for (let p = 0; p < 81; p++) {
+      if (st.v[p] || POP[st.c[p]] !== 2) continue;
+      const mp = st.c[p];
+      const nb = PEERS[p].filter((i) => !st.v[i] && POP[st.c[i]] === 2 && POP[st.c[i] & mp] === 1);
+      for (let x = 0; x < nb.length; x++) {
+        for (let y = x + 1; y < nb.length; y++) {
+          const A = nb[x], B = nb[y];
+          const ma = st.c[A], mb = st.c[B];
+          if ((ma & mp) === (mb & mp)) continue;
+          const z = ma & ~mp;
+          if (z !== (mb & ~mp)) continue;
+          const zd = lowIdx(z) + 1;
+          const elim = [];
+          for (let t = 0; t < 81; t++) {
+            if (t === p || t === A || t === B || st.v[t]) continue;
+            if ((st.c[t] & z) && SEES[t * 81 + A] && SEES[t * 81 + B]) elim.push({ i: t, d: zd });
+          }
+          if (elim.length) {
+            return { tech: 'xyw', place: [], elim, cells: [p, A, B], digits: [lowIdx(ma & mp) + 1, lowIdx(mb & mp) + 1, zd], house: null, pivot: p, wings: [A, B], z: zd };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  const FINDERS = [
+    [1, findNS], [1, findHS],
+    [2, findLCP], [2, findLCC], [2, (st) => findNaked(st, 2)],
+    [3, findHP], [3, (st) => findNaked(st, 3)],
+    [4, findXW], [4, findXYW],
+  ];
+  function findStep(st, maxTier) {
+    for (const [t, f] of FINDERS) {
+      if (t > maxTier) break;
+      const s = f(st);
+      if (s) { s.tier = t; return s; }
+    }
+    return null;
+  }
+  function applyStep(st, s) {
+    for (const p of s.place) place(st, p.i, p.d);
+    for (const e of s.elim) st.c[e.i] &= ~(1 << (e.d - 1));
+  }
+
+  /* 以人類技巧解題;maxTier 限制可用技巧等級 */
+  function logicSolve(vals, maxTier, elim) {
+    const st = makeState(vals, elim);
+    const counts = {};
+    let left = 0, maxT = 0, bad = false;
+    for (let i = 0; i < 81; i++) if (!st.v[i]) left++;
+    while (left > 0) {
+      const s = findStep(st, maxTier);
+      if (!s) break;
+      applyStep(st, s);
+      left -= s.place.length;
+      counts[s.tech] = (counts[s.tech] || 0) + 1;
+      if (s.tier > maxT) maxT = s.tier;
+      for (let i = 0; i < 81; i++) if (!st.v[i] && !st.c[i]) { bad = true; break; }
+      if (bad) break;
+    }
+    return { solved: left === 0 && !bad, counts, tier: maxT, bad };
+  }
+
+  function rate(counts) {
+    let maxW = 0, adv = 0;
+    for (const k in counts) {
+      if (!counts[k]) continue;
+      maxW = Math.max(maxW, TECH[k].w);
+      if (TECH[k].tier >= 2) adv += counts[k];
+    }
+    return Math.min(10, Math.round((maxW + Math.min(1.5, adv * 0.1)) * 10) / 10);
+  }
+
+  /* ---------- 出題 ---------- */
+  const DIFF = {
+    easy: { tier: 1, stop: [36, 40] },
+    medium: { tier: 2, stop: [30, 34] },
+    hard: { tier: 3, stop: [26, 30] },
+    expert: { tier: 4, stop: [0, 0] },
+  };
+  const toStr = (a) => Array.from(a).join('');
+  const fromStr = (s) => Int8Array.from(String(s).split('').map((ch) => +ch));
+
+  function dig(sol, cfg) {
+    const puz = Int8Array.from(sol);
+    const order = shuffle(Array.from({ length: 41 }, (_, k) => k));
+    const stop = cfg.stop[0] + Math.floor(Math.random() * (cfg.stop[1] - cfg.stop[0] + 1));
+    let clues = 81, curTier = 0;
+    for (const k of order) {
+      const a = k, b = 80 - k;
+      const va = puz[a], vb = puz[b];
+      puz[a] = 0; puz[b] = 0;
+      const removed = a === b ? 1 : 2;
+      let keep = false;
+      if (search(puz, 2, false).count === 1) {
+        const lg = logicSolve(puz, cfg.tier);
+        if (lg.solved) { keep = true; curTier = lg.tier; }
+      }
+      if (!keep) { puz[a] = va; puz[b] = vb; continue; }
+      clues -= removed;
+      if (clues <= stop && curTier === cfg.tier) break;
+    }
+    const fin = logicSolve(puz, cfg.tier);
+    return { puz, tier: fin.tier, counts: fin.counts };
+  }
+
+  function generate(diffKey, ms) {
+    const cfg = DIFF[diffKey] || DIFF.easy;
+    const t0 = Date.now();
+    let best = null, attempts = 0;
+    for (;;) {
+      attempts++;
+      const sol = search(new Int8Array(81), 1, true).sol;
+      const r = dig(sol, cfg);
+      const cand = { puz: r.puz, sol, tier: r.tier, counts: r.counts };
+      if (r.tier === cfg.tier) { best = cand; break; }
+      if (!best || Math.abs(r.tier - cfg.tier) < Math.abs(best.tier - cfg.tier)) best = cand;
+      if (Date.now() - t0 > (ms || 8000)) break;
+    }
+    let clues = 0;
+    for (let i = 0; i < 81; i++) if (best.puz[i]) clues++;
+    return {
+      diff: diffKey, puzzle: toStr(best.puz), solution: toStr(best.sol), tier: best.tier, counts: best.counts,
+      rating: rate(best.counts), clues, exact: best.tier === cfg.tier, attempts, ms: Date.now() - t0,
+    };
+  }
+
+  /* ---------- 提示、分類 ---------- */
+  function hint(vals, sol, elim) {
+    const wrong = [];
+    for (let i = 0; i < 81; i++) if (vals[i] && vals[i] !== sol[i]) wrong.push(i);
+    if (wrong.length) return { tech: 'error', tier: 0, place: [], elim: [], cells: wrong, digits: [], house: null };
+    const st = makeState(vals, elim);
+    const s = findStep(st, 9);
+    if (s) return s;
+    let best = -1, bn = 99;
+    for (let i = 0; i < 81; i++) if (!vals[i] && POP[st.c[i]] < bn) { bn = POP[st.c[i]]; best = i; }
+    if (best < 0) return null;
+    return { tech: 'reveal', tier: 5, place: [{ i: best, d: sol[best] }], elim: [], cells: [best], digits: [sol[best]], house: null };
+  }
+
+  /* 玩家在 vals(填入前)的狀態下把 d 填進 i:n 唯一候選數、h 隱性單數、x 進階/憑直覺 */
+  function classify(vals, elim, i, d) {
+    const st = makeState(vals, elim);
+    const b = 1 << (d - 1);
+    if (POP[st.c[i]] === 1 && (st.c[i] & b)) return 'n';
+    for (const h of HOUSE_OF[i]) {
+      let only = true;
+      for (const j of HOUSES[h]) if (j !== i && (st.c[j] & b)) { only = false; break; }
+      if (only && (st.c[i] & b)) return 'h';
+    }
+    return 'x';
+  }
+
+  return {
+    ALL, POP, RW, CL, BX, HOUSES, HOUSE_OF, PEERS, TECH, DIFF,
+    search, makeState, candidates, findStep, applyStep, logicSolve, rate, generate, hint, classify, toStr, fromStr, digitsOf,
+  };
+}
+if (typeof module !== 'undefined') module.exports = SudokuEngine;
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const E = SudokuEngine();
+  const $ = (s, r) => (r || document).querySelector(s);
+  const LS = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+  };
+  const bit = (d) => 1 << (d - 1);
+  const DIFFS = [
+    { k: 'easy', name: '簡單', limit: 10, desc: '只需要基本的單數技巧,適合熱身。' },
+    { k: 'medium', name: '普通', limit: 15, desc: '會用到區塊摒除或顯性數對。' },
+    { k: 'hard', name: '困難', limit: 25, desc: '需要隱性數對或顯性三數組。' },
+    { k: 'expert', name: '專家', limit: 40, desc: '需要 X-Wing 或 XY-Wing 才能解開。' },
+  ];
+  const dname = (k) => (DIFFS.find((d) => d.k === k) || DIFFS[0]).name;
+  const BOXN = ['左上', '上中', '右上', '左中', '正中', '右中', '左下', '下中', '右下'];
+  const reduceMotion = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+
+  const ICON = {
+    back: '<path d="m15 18-6-6 6-6"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+    redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
+    erase: '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
+    note: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+    hint: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+    auto: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
+    rollback: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+    sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+    pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+    play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+    stats: '<path d="M3 3v18h18"/><path d="M7 16V9M12 16V5M17 16v-4"/>',
+  };
+  const ic = (n, s) => `<svg viewBox="0 0 24 24" width="${s || 20}" height="${s || 20}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
+
+  /* ---------- 狀態 ---------- */
+  const DEF_SET = { hl: 'full', err: true, auto: true, anim: true };
+  const S = {
+    screen: 'lobby', g: null, sel: -1, noteMode: false, noteDigit: 0, hint: null, paused: false, modal: null,
+    set: Object.assign({}, DEF_SET),
+    lobby: { diff: 'easy', timed: false, limited: false, blind: false },
+    stats: {}, saved: null, winTimer: 0,
+  };
+  const blankStat = () => ({ played: 0, won: 0, best: null, total: 0, streak: 0, bestStreak: 0 });
+
+  function loadPrefs() {
+    try { Object.assign(S.set, JSON.parse(LS.get('sdk-set') || '{}')); } catch (e) {}
+    try { Object.assign(S.lobby, JSON.parse(LS.get('sdk-lobby') || '{}')); } catch (e) {}
+    if (!DIFFS.some((d) => d.k === S.lobby.diff)) S.lobby.diff = 'easy';
+    try { S.stats = JSON.parse(LS.get('sdk-stats') || '{}') || {}; } catch (e) { S.stats = {}; }
+  }
+  const savePrefs = () => { LS.set('sdk-set', JSON.stringify(S.set)); LS.set('sdk-lobby', JSON.stringify(S.lobby)); };
+  const saveStats = () => LS.set('sdk-stats', JSON.stringify(S.stats));
+
+  let toastTimer = 0;
+  function say(msg) {
+    const el = $('#toast');
+    el.textContent = msg; el.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.style.display = 'none'; }, 2600);
+  }
+  const fmt = (ms) => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+    const p = (n) => String(n).padStart(2, '0');
+    return h ? `${h}:${p(m)}:${p(r)}` : `${p(m)}:${p(r)}`;
+  };
+
+  /* ---------- 存檔 / 快照 ---------- */
+  const hex3 = (n) => ((n | 0) | 0x1000).toString(16).slice(-3);
+  const filledCount = (g) => { let n = 0; for (let i = 0; i < 81; i++) if (!g.puz[i] && g.v[i]) n++; return n; };
+  function snap(g) {
+    return { v: Array.from(g.v).join(''), n: g.notes.map(hex3).join(''), e: g.elim.map(hex3).join(''), h: g.how.map((x) => x || '-').join('') };
+  }
+  function restore(g, s) {
+    for (let i = 0; i < 81; i++) {
+      g.v[i] = +s.v[i];
+      g.notes[i] = parseInt(s.n.substr(i * 3, 3), 16) || 0;
+      g.elim[i] = parseInt(s.e.substr(i * 3, 3), 16) || 0;
+      g.how[i] = s.h[i] === '-' ? '' : s.h[i];
+    }
+  }
+  function pushUndo(g) {
+    g.U.push(snap(g));
+    if (g.U.length > 400) g.U.shift();
+    g.Rd.length = 0;
+    g.moves++;
+  }
+  function saveGame() {
+    const g = S.g;
+    if (!g || g.status !== 'play') return;
+    const o = {
+      ver: 1, diff: g.diff, puz: E.toStr(g.puz), sol: E.toStr(g.sol), v: E.toStr(g.v),
+      notes: g.notes.map(hex3).join(''), elim: g.elim.map(hex3).join(''), how: g.how.map((x) => x || '-').join(''),
+      U: g.U, Rd: g.Rd, mistakes: g.mistakes, hints: g.hints, hintTech: g.hintTech, elapsed: Math.round(g.elapsed), moves: g.moves,
+      flags: g.flags, limitMs: g.limitMs, maxMistakes: g.maxMistakes, maxHints: g.maxHints, info: g.info,
+    };
+    LS.set('sdk-save', JSON.stringify(o));
+    S.saved = { diff: g.diff, moves: g.moves, filled: filledCount(g), elapsed: g.elapsed };
+  }
+  function clearSave() { LS.del('sdk-save'); S.saved = null; }
+  function parseSave() {
+    try {
+      const o = JSON.parse(LS.get('sdk-save') || 'null');
+      if (!o || o.ver !== 1 || o.puz.length !== 81 || o.sol.length !== 81 || o.v.length !== 81 || o.notes.length !== 243 || o.elim.length !== 243 || o.how.length !== 81) return null;
+      return o;
+    } catch (e) { return null; }
+  }
+  function loadSavedMeta() {
+    const o = parseSave();
+    if (!o) { S.saved = null; return; }
+    let filled = 0;
+    for (let i = 0; i < 81; i++) if (o.puz[i] === '0' && o.v[i] !== '0') filled++;
+    S.saved = { diff: o.diff, moves: o.moves || 0, filled, elapsed: o.elapsed || 0 };
+  }
+  function buildGameFromSave(o) {
+    const g = {
+      diff: o.diff, puz: E.fromStr(o.puz), sol: E.fromStr(o.sol), v: E.fromStr(o.v),
+      notes: new Array(81).fill(0), elim: new Array(81).fill(0), how: new Array(81).fill(''),
+      U: o.U || [], Rd: o.Rd || [], mistakes: o.mistakes || 0, hints: o.hints || 0, hintTech: o.hintTech || {},
+      elapsed: o.elapsed || 0, moves: o.moves || 0, flags: o.flags || {}, limitMs: o.limitMs, maxMistakes: o.maxMistakes || 3,
+      maxHints: o.maxHints || 0, info: o.info || { rating: 0, counts: {}, tier: 0, clues: 0 }, status: 'play',
+    };
+    restore(g, { v: o.v, n: o.notes, e: o.elim, h: o.how });
+    return g;
+  }
+  function newGameObj(res, L) {
+    const puz = E.fromStr(res.puzzle);
+    const d = DIFFS.find((x) => x.k === res.diff) || DIFFS[0];
+    const challenge = !!(L.timed || L.limited || L.blind);
+    return {
+      diff: res.diff, puz, sol: E.fromStr(res.solution), v: Int8Array.from(puz),
+      notes: new Array(81).fill(0), elim: new Array(81).fill(0), how: new Array(81).fill(''),
+      U: [], Rd: [], mistakes: 0, hints: 0, hintTech: {}, elapsed: 0, moves: 0,
+      flags: { timed: !!L.timed, limited: !!L.limited && !L.blind, blind: !!L.blind },
+      limitMs: d.limit * 60000, maxMistakes: 3, maxHints: challenge ? 3 : 0,
+      info: { rating: res.rating, counts: res.counts, tier: res.tier, clues: res.clues, exact: res.exact },
+      status: 'play',
+    };
+  }
+
+  /* ---------- 出題(Web Worker,失敗時退回主執行緒) ---------- */
+  function generate(diff) {
+    return new Promise((resolve) => {
+      let done = false, worker = null, fb = false;
+      const finish = (r) => { if (done) return; done = true; try { if (worker) worker.terminate(); } catch (e) {} resolve(r); };
+      const fallback = () => { if (fb || done) return; fb = true; setTimeout(() => finish(E.generate(diff, 6000)), 50); };
+      try {
+        const src = 'const E=(' + SudokuEngine.toString() + ')();onmessage=function(e){postMessage(E.generate(e.data.diff,e.data.ms));};';
+        const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+        worker = new Worker(url);
+        worker.onmessage = (e) => { URL.revokeObjectURL(url); finish(e.data); };
+        worker.onerror = () => { URL.revokeObjectURL(url); fallback(); };
+        worker.postMessage({ diff, ms: 10000 });
+        setTimeout(fallback, 14000);
+      } catch (e) { fallback(); }
+    });
+  }
+
+  /* ---------- 統計 ---------- */
+  function record(diff, won, ms, hintsUsed) {
+    const s = S.stats[diff] = Object.assign(blankStat(), S.stats[diff] || {});
+    let newBest = false;
+    s.played++;
+    if (won) {
+      s.won++; s.total += ms; s.streak++;
+      s.bestStreak = Math.max(s.bestStreak, s.streak);
+      if (!hintsUsed && (s.best == null || ms < s.best)) { s.best = ms; newBest = true; }
+    } else s.streak = 0;
+    saveStats();
+    return newBest;
+  }
+
+  /* ---------- 盤面計算 ---------- */
+  const houseDone = (g, h) => E.HOUSES[h].every((i) => g.v[i] === g.sol[i]);
+  const isSolved = (g) => { for (let i = 0; i < 81; i++) if (g.v[i] !== g.sol[i]) return false; return true; };
+  const noWrong = (g) => { for (let i = 0; i < 81; i++) if (g.v[i] && g.v[i] !== g.sol[i]) return false; return true; };
+  function computeMarks(g) {
+    const conf = new Uint8Array(81), wrong = new Uint8Array(81);
+    for (let i = 0; i < 81; i++) {
+      const d = g.v[i];
+      if (!d) continue;
+      if (d !== g.sol[i]) wrong[i] = 1;
+      for (const p of E.PEERS[i]) if (g.v[p] === d) { conf[i] = 1; break; }
+    }
+    return { conf, wrong };
+  }
+  const canAct = () => !!(S.g && S.g.status === 'play' && !S.paused && !S.modal && S.screen === 'game');
+
+  /* ---------- 說明文字 ---------- */
+  const rcName = (i) => `第 ${E.RW[i] + 1} 行第 ${E.CL[i] + 1} 列`;
+  const cellsText = (a) => a.map(rcName).join('、');
+  const houseName = (h) => (h.t === 'row' ? `第 ${h.n + 1} 行` : h.t === 'col' ? `第 ${h.n + 1} 列` : `${BOXN[h.n]}宮`);
+  function explain(s) {
+    const d = s.digits;
+    switch (s.tech) {
+      case 'ns': {
+        const p = s.place[0];
+        return { title: '唯一候選數', short: `有一格只剩下一個候選數,留意${rcName(p.i)}。`, long: `${rcName(p.i)}所在的行、列、宮已經出現了其他八個數字,只有 ${p.d} 還沒有出現,所以這格填 ${p.d}。`, apply: '填入數字' };
+      }
+      case 'hs': {
+        const p = s.place[0];
+        return { title: '隱性單數', short: `留意${houseName(s.house)}裡的數字 ${p.d},它只剩一個位置可以放。`, long: `在${houseName(s.house)}裡,數字 ${p.d} 只有${rcName(p.i)}這一個位置可以放,所以這格填 ${p.d}。`, apply: '填入數字' };
+      }
+      case 'lcp':
+        return { title: '區塊摒除', short: `留意${houseName(s.house)}裡的數字 ${d[0]},它的位置全部在同一條線上。`, long: `在${houseName(s.house)},數字 ${d[0]} 的候選位置全部落在${houseName(s.line)}上。這個宮一定要在${houseName(s.line)}放一個 ${d[0]},所以${houseName(s.line)}上屬於其他宮的格子都不能是 ${d[0]},可以刪除 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
+      case 'lcc':
+        return { title: '區塊摒除', short: `留意${houseName(s.house)}裡的數字 ${d[0]},它的位置全部在同一個宮內。`, long: `在${houseName(s.house)},數字 ${d[0]} 的候選位置全部落在${houseName(s.box)}內。${houseName(s.box)}一定要在這條線上放一個 ${d[0]},所以${houseName(s.box)}內不在這條線上的格子都不能是 ${d[0]},可以刪除 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
+      case 'np':
+        return { title: '顯性數對', short: `${houseName(s.house)}裡有兩格只剩同樣的兩個候選數。`, long: `${houseName(s.house)}裡的${cellsText(s.cells)}都只剩 ${d[0]}、${d[1]} 兩個候選數。這兩格一定剛好放 ${d[0]} 和 ${d[1]},所以${houseName(s.house)}其他格可以刪除 ${d[0]}、${d[1]},共 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
+      case 'nt':
+        return { title: '顯性三數組', short: `${houseName(s.house)}裡有三格的候選數只用到三個數字。`, long: `${houseName(s.house)}裡的${cellsText(s.cells)},候選數加起來只有 ${d.join('、')} 三個數字。這三格一定剛好放這三個數,所以${houseName(s.house)}其他格可以刪除它們,共 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
+      case 'hp':
+        return { title: '隱性數對', short: `${houseName(s.house)}裡有兩個數字只能放在同樣的兩格。`, long: `在${houseName(s.house)}裡,數字 ${d[0]} 和 ${d[1]} 都只能放在${cellsText(s.cells)}這兩格,所以這兩格一定是 ${d[0]} 和 ${d[1]},可以刪除這兩格的其他候選數,共 ${s.elim.length} 個。`, apply: '刪除候選數' };
+      case 'xw': {
+        const lineW = s.base === 'row' ? '行' : '列', coverW = s.base === 'row' ? '列' : '行';
+        const L = s.lines.map((x) => x + 1).join('、'), C = s.covers.map((x) => x + 1).join('、');
+        return { title: 'X-Wing', short: `數字 ${d[0]} 在兩${lineW}裡各只有兩個位置,而且剛好對齊成長方形。`, long: `數字 ${d[0]} 在第 ${L} ${lineW}各只有兩個候選位置,而且都在第 ${C} ${coverW}。這四格會形成一個 X,無論哪種放法,第 ${C} ${coverW}都會用掉 ${d[0]},所以這兩${coverW}其餘格子不能是 ${d[0]},共可刪除 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
+      }
+      case 'xyw':
+        return { title: 'XY-Wing', short: `有一格(樞紐)連著兩個翼格,三格的候選數剛好首尾相扣。`, long: `${rcName(s.pivot)}是樞紐,候選數是 ${d[0]}、${d[1]}。它的兩個翼格${rcName(s.wings[0])}(${d[0]}、${d[2]})和${rcName(s.wings[1])}(${d[1]}、${d[2]})。樞紐不論是 ${d[0]} 還是 ${d[1]},其中一個翼格必定是 ${d[2]},所以同時看到兩個翼格的格子不能是 ${d[2]},共可刪除 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
+      case 'error':
+        return { title: '檢查錯誤', short: `盤面上有 ${s.cells.length} 格和答案不符,先修正再繼續。`, long: `${cellsText(s.cells.slice(0, 4))}${s.cells.length > 4 ? ' 等' : ''}填的數字和答案不符。可以按「回溯」回到最後一個沒有錯誤的狀態。`, apply: '回溯' };
+      default: {
+        const p = s.place[0];
+        return { title: '答案提示', short: '目前找不到可以直接套用的技巧,先給你一格答案。', long: `目前找不到可以直接套用的技巧。${rcName(p.i)}的答案是 ${p.d}。`, apply: '填入數字' };
+      }
+    }
+  }
+  function hintMarks(h) {
+    const m = { house: new Set(), pat: new Set(), tgt: new Map(), elim: new Map() };
+    if (!h) return m;
+    const s = h.step;
+    const addH = (hi) => { const idx = hi.t === 'row' ? hi.n : hi.t === 'col' ? 9 + hi.n : 18 + hi.n; for (const i of E.HOUSES[idx]) m.house.add(i); };
+    if (s.house) addH(s.house);
+    if (s.line) addH(s.line);
+    if (s.box) addH(s.box);
+    if (s.tech === 'xw') for (const a of s.lines) addH({ t: s.base, n: a });
+    for (const i of s.cells) m.pat.add(i);
+    if (h.stage === 2) {
+      for (const p of s.place) m.tgt.set(p.i, p.d);
+      for (const e of s.elim) m.elim.set(e.i, (m.elim.get(e.i) | 0) | bit(e.d));
+    }
+    return m;
+  }
+
+  /* ---------- 盤面繪製(逐格比對,避免重繪打斷動畫) ---------- */
+  const cellEls = [];
+  const sigs = new Array(81).fill(null);
+  function buildBoard() {
+    const b = $('#board');
+    let h = '';
+    for (let i = 0; i < 81; i++) h += `<div class="cell" role="button" data-i="${i}"></div>`;
+    b.innerHTML = h;
+    b.querySelectorAll('.cell').forEach((el, i) => { cellEls[i] = el; });
+  }
+  function renderBoard() {
+    const g = S.g;
+    if (!g) return;
+    const showErr = S.set.err && !g.flags.blind;
+    const sel = S.sel, hl = S.set.hl, nd = S.noteMode ? S.noteDigit : 0;
+    const sv = nd || (sel >= 0 ? g.v[sel] : 0);
+    let nx = null;
+    if (nd) { nx = new Set(); for (let k = 0; k < 81; k++) if (g.v[k] === nd) for (const p of E.PEERS[k]) if (!g.v[p]) nx.add(p); }
+    const marks = computeMarks(g), hm = hintMarks(S.hint);
+    const peers = sel >= 0 && hl !== 'off' ? new Set(E.PEERS[sel]) : null;
+    for (let i = 0; i < 81; i++) {
+      const v = g.v[i], r = E.RW[i], c = E.CL[i];
+      let cls = 'cell';
+      if (c % 3 === 2 && c < 8) cls += ' cr';
+      if (r % 3 === 2 && r < 8) cls += ' cb';
+      cls += g.puz[i] ? ' given' : v ? ' user' : '';
+      if (peers && peers.has(i)) cls += ' peer';
+      if (nx && nx.has(i)) cls += ' nx';
+      if (hm.house.has(i)) cls += ' hh';
+      if ((hl === 'full' || nd) && sv && v === sv && i !== sel) cls += ' same';
+      if (hm.pat.has(i)) cls += ' hp';
+      if (hm.elim.has(i)) cls += ' he';
+      if (hm.tgt.has(i)) cls += ' ht';
+      if (showErr && v && marks.conf[i]) cls += ' conf';
+      if (showErr && v && marks.wrong[i]) cls += ' wrong';
+      if (i === sel) cls += ' sel';
+      let inner = '';
+      if (v) inner = `<b>${v}</b>`;
+      else if (hm.tgt.has(i)) inner = `<b class="pv">${hm.tgt.get(i)}</b>`;
+      else {
+        const nm = g.notes[i], em = hm.elim.get(i) | 0;
+        if (nm || em) {
+          inner = '<i class="nt">';
+          for (let d = 1; d <= 9; d++) {
+            const on = nm & bit(d), x = em & bit(d);
+            inner += `<span class="${x ? 'x' : (hl === 'full' || nd) && sv === d && on ? 'm' : ''}">${on || x ? d : ''}</span>`;
+          }
+          inner += '</i>';
+        }
+      }
+      const aria = `第 ${r + 1} 行第 ${c + 1} 列,${v ? '數字 ' + v : g.notes[i] ? '筆記 ' + E.digitsOf(g.notes[i]).join('') : '空格'}${g.puz[i] ? ',題目' : ''}`;
+      const sig = cls + '|' + inner + '|' + aria + '|' + (i === sel ? 1 : 0);
+      if (sigs[i] !== sig) {
+        sigs[i] = sig;
+        const el = cellEls[i];
+        el.className = cls + (el.classList.contains('pop') ? ' pop' : '');
+        el.innerHTML = inner;
+        el.setAttribute('aria-label', aria);
+        el.setAttribute('aria-pressed', i === sel ? 'true' : 'false');
+      }
+    }
+    $('#tray').classList.toggle('paused', S.paused);
+    $('#board').classList.toggle('won', g.status === 'won');
+    $('#pause').hidden = !S.paused;
+  }
+  function pop(cells, origin) {
+    if (!S.set.anim || reduceMotion()) return;
+    const seen = new Set();
+    for (const i of cells) {
+      if (seen.has(i)) continue;
+      seen.add(i);
+      const el = cellEls[i];
+      const dist = Math.abs(E.RW[i] - E.RW[origin]) + Math.abs(E.CL[i] - E.CL[origin]);
+      el.style.setProperty('--d', dist * 45 + 'ms');
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+    }
+  }
+
+  /* ---------- 其餘畫面 ---------- */
+  function updateTimer() {
+    const g = S.g, el = $('#tm');
+    if (!g || !el) return;
+    if (g.flags.timed) {
+      const left = g.limitMs - g.elapsed;
+      el.textContent = fmt(left);
+      el.classList.toggle('low', left < 60000);
+    } else { el.textContent = fmt(g.elapsed); el.classList.remove('low'); }
+  }
+  function renderTop() {
+    const g = S.g;
+    $('#top').innerHTML = `
+      <button class="btn ghost small" data-act="menu">${ic('back', 18)}選單</button>
+      <span class="title">數獨</span>
+      <span class="pill hlp"><b>${dname(g.diff)}</b></span>
+      <span class="sp"></span>
+      <span class="timer" id="tm" aria-label="${g.flags.timed ? '剩餘時間' : '用時'}"></span>
+      <button class="iconbtn" data-act="pause" aria-label="${S.paused ? '繼續' : '暫停'}" ${g.status !== 'play' ? 'disabled' : ''}>${ic(S.paused ? 'play' : 'pause', 18)}</button>`;
+    updateTimer();
+  }
+  function renderStatus() {
+    const g = S.g;
+    const left = 81 - g.v.reduce((n, x) => n + (x ? 1 : 0), 0);
+    let h = '';
+    if (g.flags.blind) h += '<span class="chip on">盲填</span>';
+    else h += `<span class="chip ${g.flags.limited && g.mistakes >= g.maxMistakes - 1 ? 'bad' : ''}">錯誤 <b>${g.mistakes}</b>${g.flags.limited ? ' / ' + g.maxMistakes : ''}</span>`;
+    h += `<span class="chip">提示 <b>${g.hints}</b>${g.maxHints ? ' / ' + g.maxHints : ''}</span>`;
+    if (g.flags.timed) h += `<span class="chip on">限時 ${Math.round(g.limitMs / 60000)} 分鐘</span>`;
+    h += `<span class="chip">剩 <b>${left}</b> 格</span>`;
+    if (S.noteMode) h += `<span class="chip on">筆記模式 · ${S.noteDigit ? '數字 ' + S.noteDigit : '揀格再按數字'}</span>`;
+    $('#status').innerHTML = h;
+  }
+  function renderHint() {
+    const el = $('#hint'), h = S.hint;
+    if (!h) { el.hidden = true; el.innerHTML = ''; return; }
+    const ex = explain(h.step);
+    el.hidden = false;
+    el.innerHTML = `
+      <div class="ah"><b>${ex.title}</b><span>${h.stage === 1 ? '先看看高亮的位置' : '詳細說明'}</span></div>
+      <p>${h.stage === 1 ? ex.short : ex.long}</p>
+      <div class="ar2">
+        ${h.stage === 1 ? '<button class="btn small" data-act="hint-more">詳細說明</button>' : `<button class="btn small apply" data-act="hint-apply">${ex.apply}</button>`}
+        <button class="btn small ghost" data-act="hint-close">關閉</button>
+      </div>`;
+  }
+  function renderTools() {
+    const g = S.g, live = g.status === 'play' && !S.paused;
+    const hintOff = g.flags.blind || (g.maxHints > 0 && g.hints >= g.maxHints && !S.hint);
+    const T = [
+      ['undo', '撤銷', !live || !g.U.length, false, ''],
+      ['redo', '重做', !live || !g.Rd.length, false, ''],
+      ['erase', '清除', !live, false, ''],
+      ['note', '筆記', !live, S.noteMode, ''],
+      ['hint', '提示', !live || hintOff, !!S.hint, g.flags.blind ? '盲填模式不能使用提示' : ''],
+      ['auto', '自動筆記', !live, false, ''],
+      ['rollback', '回溯', !live || g.flags.blind, false, g.flags.blind ? '盲填模式不能使用回溯' : '回到最後一個沒有錯誤的狀態'],
+      ['settings', '設定', false, false, ''],
+    ];
+    const icons = { undo: 'undo', redo: 'redo', erase: 'erase', note: 'note', hint: 'hint', auto: 'auto', rollback: 'rollback', settings: 'sliders' };
+    $('#tools').innerHTML = T.map(([a, label, dis, on, title]) =>
+      `<button class="tool ${on ? 'on' : ''}" data-act="${a}" ${dis ? 'disabled' : ''} ${title ? `title="${title}"` : ''} ${a === 'note' ? `aria-pressed="${on}"` : ''}>${ic(icons[a], 20)}<span>${label}</span></button>`).join('');
+  }
+  function renderPad() {
+    const g = S.g, cnt = new Array(10).fill(0);
+    for (const x of g.v) if (x) cnt[x]++;
+    const sv = S.sel >= 0 ? g.v[S.sel] : 0;
+    let h = '';
+    for (let d = 1; d <= 9; d++) {
+      const rem = 9 - cnt[d], done = rem <= 0;
+      h += `<button class="key ${done ? 'done' : ''} ${(S.noteMode ? S.noteDigit === d : sv === d) ? 'on' : ''} ${S.noteMode && !done ? 'noting' : ''}" data-d="${d}" aria-disabled="${done}" aria-label="數字 ${d},${done ? '已填齊' : '還剩 ' + rem + ' 個'}"><span class="kd">${d}</span><span class="kr">${done ? '完' : rem}</span></button>`;
+    }
+    $('#pad').innerHTML = h;
+  }
+
+  function lobbyHTML() {
+    const L = S.lobby, d = DIFFS.find((x) => x.k === L.diff), sv = S.saved;
+    const live = S.g && S.g.status === 'play';
+    const resume = sv && (live || !S.g) ? `
+      <div class="resume">
+        <div class="rt"><b>上次的對局 · ${dname(sv.diff)}</b><span>用時 ${fmt(sv.elapsed)} · 已填 ${sv.filled} 格</span></div>
+        <button class="btn primary small" data-act="resume">繼續牌局</button>
+      </div><hr class="sep">` : '';
+    const sw = (key, label, sub, disabled) => `
+      <div class="srow"><div class="stx"><b>${label}</b><small>${sub}</small></div>
+      <button class="sw" role="switch" aria-checked="${!!L[key]}" aria-label="${label}" ${disabled ? 'aria-disabled="true"' : ''} data-act="flag" data-v="${key}"><i></i></button></div>`;
+    return `
+      <div class="hero"><h1>數獨</h1><p>邏輯推理 · 每題唯一解</p>
+        <div class="fan" aria-hidden="true">${[[1, 'c0'], [9, 'c1'], [5, 'c2'], [3, 'c3'], [7, 'c0']].map(([n, c]) => `<span class="tile ${c}"><b>${n}</b></span>`).join('')}</div>
+      </div>
+      <div class="panel">
+        ${resume}
+        <div><h2>難度</h2>
+          <div class="seg" role="group" aria-label="難度">${DIFFS.map((x) => `<button class="${x.k === L.diff ? 'on' : ''}" data-act="diff" data-v="${x.k}" aria-pressed="${x.k === L.diff}">${x.name}</button>`).join('')}</div>
+          <p class="hint-text" style="margin-top:8px">${d.desc}</p>
+        </div>
+        <hr class="sep">
+        <div><h2>挑戰模式</h2><div class="flags">
+          ${sw('timed', '限時', `${d.limit} 分鐘內完成,時間到即失敗`, false)}
+          ${sw('limited', '限錯誤次數', L.blind ? '盲填時無法使用' : '最多錯 3 次,第 3 次即失敗', L.blind)}
+          ${sw('blind', '盲填', '填錯時不提示,填滿後才檢查', false)}
+        </div><p class="hint-text" style="margin-top:8px">挑戰模式下提示最多用 3 次。</p></div>
+        <hr class="sep">
+        <div class="row"><button class="btn primary grow" data-act="start">開始遊戲</button></div>
+        <div class="row">
+          <button class="btn grow" data-act="stats">${ic('stats', 18)}統計</button>
+          <button class="btn grow" data-act="settings">${ic('sliders', 18)}設定</button>
+        </div>
+      </div>`;
+  }
+
+  /* ---------- 浮層內容 ---------- */
+  const techGroups = (counts) => {
+    const grp = {};
+    for (const k in counts) {
+      const T = E.TECH[k];
+      if (!T) continue;
+      const o = grp[T.name] = grp[T.name] || { n: 0, w: 0 };
+      o.n += counts[k]; o.w = Math.max(o.w, T.w);
+    }
+    return Object.entries(grp).sort((a, b) => a[1].w - b[1].w);
+  };
+  function analysisHTML(g) {
+    const groups = techGroups(g.info.counts || {});
+    const steps = groups.reduce((n, [, o]) => n + o.n, 0);
+    const top = groups.length ? groups[groups.length - 1][0] : '—';
+    const r = g.info.rating || 0;
+    return `
+      <div><h3>題目分析</h3>
+        <div class="meter"><span>難度評分</span><div class="bar"><i style="width:${Math.min(100, r * 10)}%"></i></div><b>${r.toFixed(1)}</b><span>/ 10</span></div>
+        <p style="margin-top:8px">起始 ${g.info.clues} 個提示數,邏輯解題共 ${steps} 步,最高技巧是「${top}」。</p>
+        <div class="chipline" style="margin-top:8px">${groups.map(([n, o]) => `<span class="chip">${n} <b>×${o.n}</b></span>`).join('')}</div>
+      </div>`;
+  }
+  function yoursHTML(g) {
+    const c = { n: 0, h: 0, x: 0, H: 0 };
+    for (let i = 0; i < 81; i++) if (!g.puz[i]) c[g.how[i] || 'x']++;
+    const total = c.n + c.h + c.x + c.H || 1;
+    const rows = [['n', '唯一候選數', 'var(--t-blue)'], ['h', '隱性單數', 'var(--ok-2)'], ['x', '進階推理或憑直覺', 'var(--t-orange)'], ['H', '提示協助', 'var(--hl-line)']];
+    const ht = Object.entries(g.hintTech || {}).map(([k, n]) => `${k === 'error' ? '檢查錯誤' : k === 'reveal' ? '直接提示' : E.TECH[k] ? E.TECH[k].name : k} ×${n}`).join('、');
+    return `
+      <div><h3>你的解法</h3>
+        <div class="stack" role="img" aria-label="解法分佈">${rows.map(([k, , col]) => c[k] ? `<i style="flex:${c[k]};background:${col}"></i>` : '').join('')}</div>
+        <div class="legend">${rows.map(([k, label, col]) => `<div><em style="background:${col}"></em>${label}<span>${c[k]} 格 · ${Math.round((c[k] / total) * 100)}%</span></div>`).join('')}</div>
+        ${ht ? `<p style="margin-top:8px">使用過的提示:${ht}。</p>` : ''}
+      </div>`;
+  }
+  function modalHTML() {
+    const m = S.modal, g = S.g;
+    if (!m) return '';
+    if (m.type === 'busy') return `<div class="overlay"><div class="card busy" role="status" tabindex="-1"><h2>正在出題…</h2><p>為你準備一題只有唯一解的${dname(S.lobby.diff)}題目。</p><div class="bar"><i></i></div></div></div>`;
+    if (m.type === 'confirm') return `<div class="overlay"><div class="card" role="dialog" aria-modal="true" tabindex="-1"><h2>${m.title}</h2><p>${m.msg}</p><div class="row" style="justify-content:flex-end"><button class="btn" data-act="close">取消</button><button class="btn primary" data-act="${m.act}">${m.ok}</button></div></div></div>`;
+    if (m.type === 'settings') {
+      const sw = (key, label, sub) => `<div class="srow"><div class="stx"><b>${label}</b><small>${sub}</small></div><button class="sw" role="switch" aria-checked="${!!S.set[key]}" aria-label="${label}" data-act="set" data-v="${key}"><i></i></button></div>`;
+      const hl = [['full', '行列宮 + 同數字'], ['lines', '只有行列宮'], ['off', '關閉']];
+      return `<div class="overlay" data-scrim="1"><div class="card" role="dialog" aria-modal="true" aria-label="設定" tabindex="-1"><h2>設定</h2>
+        <div class="ctl">
+          <div><h3>選格時反光</h3><div class="seg" role="group" aria-label="選格時反光">${hl.map(([k, n]) => `<button class="${S.set.hl === k ? 'on' : ''}" data-act="hl" data-v="${k}" aria-pressed="${S.set.hl === k}">${n}</button>`).join('')}</div></div>
+          ${sw('err', '錯誤提示', '填錯的數字會標示紅色(盲填模式不顯示)')}
+          ${sw('auto', '筆記自動清除', '填入數字後,同行、列、宮的相同筆記自動消失')}
+          ${sw('anim', '完成動畫', '完成一行、一列、一宮或整盤時閃動')}
+        </div>
+        <div class="row" style="justify-content:space-between"><button class="btn" data-act="stats">${ic('stats', 18)}查看統計</button><button class="btn primary" data-act="close">完成</button></div>
+      </div></div>`;
+    }
+    if (m.type === 'stats') {
+      const cards = DIFFS.map((d) => {
+        const s = Object.assign(blankStat(), S.stats[d.k] || {});
+        return `<div class="scard"><h3>${d.name}</h3><div class="big">${s.best == null ? '—' : fmt(s.best)}</div><small style="color:var(--muted);font-size:12px">最佳時間</small>
+          <dl><dt>完成 / 開始</dt><dd>${s.won} / ${s.played}</dd><dt>勝率</dt><dd>${s.played ? Math.round((s.won / s.played) * 100) + '%' : '—'}</dd><dt>平均時間</dt><dd>${s.won ? fmt(s.total / s.won) : '—'}</dd><dt>目前連勝</dt><dd>${s.streak}</dd><dt>最長連勝</dt><dd>${s.bestStreak}</dd></dl></div>`;
+      }).join('');
+      return `<div class="overlay" data-scrim="1"><div class="card" role="dialog" aria-modal="true" aria-label="統計" tabindex="-1" style="width:min(100%,640px)"><h2>統計</h2>
+        <div class="sgrid">${cards}</div>
+        <p>最佳時間只計算沒有使用提示的對局。失敗或放棄的對局會中斷連勝。</p>
+        <div class="row" style="justify-content:flex-end"><button class="btn primary" data-act="close">關閉</button></div></div></div>`;
+    }
+    if (m.type === 'win' && g) {
+      const s = Object.assign(blankStat(), S.stats[g.diff] || {});
+      return `<div class="overlay"><div class="card" role="dialog" aria-modal="true" aria-label="完成" tabindex="-1"><h2>完成!</h2>
+        <div class="row"><span class="pill hlp"><b>${dname(g.diff)}</b></span>${g.flags.timed ? '<span class="chip">限時</span>' : ''}${g.flags.limited ? '<span class="chip">限錯誤</span>' : ''}${g.flags.blind ? '<span class="chip">盲填</span>' : ''}${m.newBest ? '<span class="newbest">新的最佳時間</span>' : ''}</div>
+        <div class="facts"><div class="fact"><small>用時</small><b>${fmt(g.elapsed)}</b></div><div class="fact"><small>錯誤</small><b>${g.mistakes}</b></div><div class="fact"><small>提示</small><b>${g.hints}</b></div></div>
+        ${yoursHTML(g)}${analysisHTML(g)}
+        <p>${dname(g.diff)}目前連勝 ${s.streak} 局。</p>
+        <div class="row" style="justify-content:flex-end"><button class="btn" data-act="close">查看盤面</button><button class="btn" data-act="menu">回選單</button><button class="btn primary" data-act="again">再玩一局</button></div>
+      </div></div>`;
+    }
+    if (m.type === 'lost' && g) {
+      const why = m.reason === 'time' ? '時間到了。' : '錯誤次數已用完。';
+      return `<div class="overlay"><div class="card" role="dialog" aria-modal="true" aria-label="挑戰失敗" tabindex="-1"><h2>挑戰失敗</h2>
+        <p>${why}已填 ${filledCount(g)} / ${81 - g.info.clues} 格,用時 ${fmt(g.elapsed)}。</p>
+        <div class="row" style="justify-content:flex-end"><button class="btn" data-act="menu">回選單</button><button class="btn" data-act="retry">重玩這題</button><button class="btn primary" data-act="again">新的一局</button></div>
+      </div></div>`;
+    }
+    return '';
+  }
+  let lastModalType = null;
+  function renderModal() {
+    const t = S.modal ? S.modal.type : null;
+    $('#modal').innerHTML = modalHTML();
+    if (t && t !== lastModalType) { const c = $('#modal .card'); if (c) c.focus({ preventScroll: true }); }
+    lastModalType = t;
+  }
+
+  function render() {
+    const lobby = S.screen === 'lobby';
+    $('#lobby').hidden = !lobby;
+    $('#game').hidden = lobby;
+    if (lobby) $('#lobby').innerHTML = lobbyHTML();
+    else if (S.g) { if (S.noteDigit && S.g.v.filter((x) => x === S.noteDigit).length >= 9) S.noteDigit = 0; renderTop(); renderBoard(); renderStatus(); renderHint(); renderTools(); renderPad(); }
+    renderModal();
+  }
+
+  /* ---------- 遊戲動作 ---------- */
+  function placeCore(g, i, d, mark) {
+    const was = E.HOUSE_OF[i].map((h) => houseDone(g, h));
+    const tmp = Int8Array.from(g.v); tmp[i] = 0;
+    g.how[i] = mark || (d === g.sol[i] ? E.classify(tmp, g.elim, i, d) : '');
+    g.v[i] = d; g.notes[i] = 0;
+    if (S.set.auto) for (const p of E.PEERS[i]) g.notes[p] &= ~bit(d);
+    return was;
+  }
+  function afterPlace(g, i, was, wrong) {
+    if (wrong) {
+      g.mistakes++;
+      if (g.flags.limited && g.mistakes >= g.maxMistakes) { saveGame(); lose('mistakes'); return; }
+    }
+    if (isSolved(g)) { win(i); return; }
+    if (!g.flags.blind) {
+      const cells = [];
+      E.HOUSE_OF[i].forEach((h, k) => { if (!was[k] && houseDone(g, h)) for (const c of E.HOUSES[h]) cells.push(c); });
+      if (cells.length) pop(cells, i);
+    } else if (g.v.every((x) => x)) say('數字都填滿了,但盤面還有錯誤。');
+  }
+  function inputDigit(d, note) {
+    if (!canAct() || S.sel < 0) return;
+    const g = S.g, i = S.sel;
+    if (g.puz[i]) { say('這是題目給的數字'); return; }
+    S.hint = null;
+    if (note) {
+      if (g.v[i]) { say('先清除這格的數字,才能寫筆記'); return; }
+      pushUndo(g); g.notes[i] ^= bit(d);
+      saveGame(); render(); return;
+    }
+    if (g.v[i] === d) { eraseCell(); return; }
+    pushUndo(g);
+    const was = placeCore(g, i, d);
+    saveGame();
+    afterPlace(g, i, was, d !== g.sol[i]);
+    render();
+  }
+  function eraseCell() {
+    if (!canAct() || S.sel < 0) return;
+    const g = S.g, i = S.sel;
+    if (g.puz[i]) return;
+    if (!g.v[i] && !g.notes[i]) return;
+    pushUndo(g); S.hint = null;
+    g.v[i] = 0; g.notes[i] = 0; g.how[i] = '';
+    saveGame(); render();
+  }
+  function undo() {
+    if (!canAct() || !S.g.U.length) return;
+    const g = S.g;
+    g.Rd.push(snap(g)); restore(g, g.U.pop()); S.hint = null;
+    saveGame(); render();
+  }
+  function redo() {
+    if (!canAct() || !S.g.Rd.length) return;
+    const g = S.g;
+    g.U.push(snap(g)); restore(g, g.Rd.pop()); S.hint = null;
+    saveGame();
+    if (isSolved(g)) { win(S.sel >= 0 ? S.sel : 40); return; }
+    render();
+  }
+  function autoNotes() {
+    if (!canAct()) return;
+    const g = S.g;
+    pushUndo(g); S.hint = null;
+    const c = E.candidates(g.v, g.elim);
+    for (let i = 0; i < 81; i++) if (!g.v[i]) g.notes[i] = c[i];
+    saveGame(); render(); say('已填入所有候選數字');
+  }
+  function rollback() {
+    if (!canAct()) return;
+    const g = S.g;
+    if (g.flags.blind) { say('盲填模式不能使用回溯'); return; }
+    if (noWrong(g)) { say('目前盤面沒有錯誤'); return; }
+    const ok = (s) => { for (let i = 0; i < 81; i++) { const d = +s.v[i]; if (d && d !== g.sol[i]) return false; } return true; };
+    let j = 0;
+    for (let k = g.U.length - 1; k >= 0; k--) if (ok(g.U[k])) { j = k; break; }
+    const cur = snap(g), popped = g.U.splice(j);
+    g.Rd.length = 0;
+    g.Rd.push(cur);
+    for (let k = popped.length - 1; k >= 1; k--) g.Rd.push(popped[k]);
+    restore(g, popped[0]);
+    S.hint = null;
+    saveGame(); render();
+    say(`已回到最後一個沒有錯誤的狀態(退回 ${popped.length} 步)`);
+  }
+  function openHint() {
+    if (!canAct()) return;
+    const g = S.g;
+    if (S.hint) { S.hint = null; render(); return; }
+    if (g.flags.blind) { say('盲填模式不能使用提示'); return; }
+    if (g.maxHints && g.hints >= g.maxHints) { say('這局的提示已經用完'); return; }
+    const step = E.hint(g.v, g.sol, g.elim);
+    if (!step) { say('盤面已經完成了'); return; }
+    g.hints++;
+    g.hintTech[step.tech] = (g.hintTech[step.tech] || 0) + 1;
+    S.hint = { step, stage: 1 };
+    saveGame(); render();
+  }
+  function applyHint() {
+    if (!canAct() || !S.hint) return;
+    const g = S.g, s = S.hint.step;
+    if (s.tech === 'error') { S.hint = null; rollback(); render(); return; }
+    pushUndo(g);
+    S.hint = null;
+    if (s.place.length) {
+      const p = s.place[0];
+      S.sel = p.i;
+      const was = placeCore(g, p.i, p.d, 'H');
+      saveGame();
+      afterPlace(g, p.i, was, false);
+    } else {
+      for (const e of s.elim) { g.notes[e.i] &= ~bit(e.d); g.elim[e.i] |= bit(e.d); }
+      saveGame();
+    }
+    render();
+  }
+  function togglePause() {
+    const g = S.g;
+    if (!g || g.status !== 'play' || S.modal) return;
+    S.paused = !S.paused;
+    saveGame(); render();
+  }
+
+  function win(origin) {
+    const g = S.g;
+    if (g.status !== 'play') return;
+    g.status = 'won'; S.hint = null; S.paused = false;
+    const newBest = record(g.diff, true, g.elapsed, g.hints);
+    clearSave();
+    render();
+    pop(Array.from({ length: 81 }, (_, i) => i), origin);
+    clearTimeout(S.winTimer);
+    S.winTimer = setTimeout(() => { if (S.g === g && S.screen === 'game' && !S.modal) { S.modal = { type: 'win', newBest }; render(); } }, reduceMotion() ? 200 : 1300);
+  }
+  function lose(reason) {
+    const g = S.g;
+    if (g.status !== 'play') return;
+    g.status = 'lost'; S.hint = null; S.paused = false;
+    record(g.diff, false, g.elapsed, g.hints);
+    clearSave();
+    S.modal = { type: 'lost', reason };
+    render();
+  }
+
+  /* ---------- 開局流程 ---------- */
+  function firstEmpty(g) { for (let i = 0; i < 81; i++) if (!g.v[i]) return i; return 40; }
+  function startFlow() {
+    const sv = S.saved;
+    if (sv && sv.moves > 0 && (!S.g || S.g.status === 'play')) {
+      S.modal = { type: 'confirm', title: '放棄目前的對局?', msg: `你有一局${dname(sv.diff)}尚未完成。開始新遊戲會把它算作未完成,連勝會中斷。`, ok: '放棄並開始', act: 'start-force' };
+      render(); return;
+    }
+    startNew();
+  }
+  async function startNew() {
+    if (S.modal && S.modal.type === 'busy') return;
+    const sv = S.saved;
+    if (sv && sv.moves > 0 && (!S.g || S.g.status === 'play')) record(sv.diff, false, 0, 0);
+    clearSave(); S.g = null;
+    savePrefs();
+    S.modal = { type: 'busy' }; render();
+    const res = await generate(S.lobby.diff);
+    S.g = newGameObj(res, S.lobby);
+    S.sel = firstEmpty(S.g); S.noteMode = false; S.noteDigit = 0; S.hint = null; S.paused = false; S.screen = 'game'; S.modal = null;
+    for (let i = 0; i < 81; i++) sigs[i] = null;
+    saveGame(); render();
+  }
+  function resume() {
+    if (!(S.g && S.g.status === 'play')) {
+      const o = parseSave();
+      if (!o) { clearSave(); render(); return; }
+      S.g = buildGameFromSave(o);
+      S.sel = firstEmpty(S.g);
+    }
+    S.noteMode = false; S.noteDigit = 0; S.hint = null; S.paused = false; S.screen = 'game'; S.modal = null;
+    for (let i = 0; i < 81; i++) sigs[i] = null;
+    render();
+  }
+  function retry() {
+    const g = S.g;
+    if (!g) return;
+    g.v = Int8Array.from(g.puz); g.notes.fill(0); g.elim.fill(0); g.how.fill('');
+    g.U = []; g.Rd = []; g.mistakes = 0; g.hints = 0; g.hintTech = {}; g.elapsed = 0; g.moves = 0; g.status = 'play';
+    S.modal = null; S.hint = null; S.paused = false; S.sel = firstEmpty(g);
+    for (let i = 0; i < 81; i++) sigs[i] = null;
+    saveGame(); render();
+  }
+  function toMenu() {
+    if (S.g && S.g.status === 'play') saveGame();
+    clearTimeout(S.winTimer);
+    S.modal = null; S.hint = null; S.screen = 'lobby';
+    if (S.g && S.g.status !== 'play') S.g = null;
+    render();
+  }
+
+  /* ---------- 事件 ---------- */
+  const ACTS = {
+    diff: (t) => { S.lobby.diff = t.dataset.v; savePrefs(); render(); },
+    flag: (t) => {
+      const k = t.dataset.v;
+      if (t.getAttribute('aria-disabled') === 'true') return;
+      S.lobby[k] = !S.lobby[k];
+      if (k === 'blind' && S.lobby.blind) S.lobby.limited = false;
+      savePrefs(); render();
+    },
+    start: startFlow,
+    'start-force': () => { S.modal = null; startNew(); },
+    resume,
+    stats: () => { S.modal = { type: 'stats' }; render(); },
+    settings: () => { S.modal = { type: 'settings' }; render(); },
+    close: () => { S.modal = null; render(); },
+    menu: toMenu,
+    again: () => { S.modal = null; S.g = null; startNew(); },
+    retry,
+    pause: togglePause,
+    undo, redo, erase: eraseCell, auto: autoNotes, rollback,
+    note: toggleNote,
+    hint: openHint,
+    'hint-more': () => { if (S.hint) { S.hint.stage = 2; render(); } },
+    'hint-apply': applyHint,
+    'hint-close': () => { S.hint = null; render(); },
+    set: (t) => { const k = t.dataset.v; S.set[k] = !S.set[k]; savePrefs(); render(); },
+    hl: (t) => { S.set.hl = t.dataset.v; savePrefs(); render(); },
+  };
+  /* 開關筆記模式:若已揀中有數字嘅格,自動變成該數字嘅筆記模式;否則用舊式(揀格後按數字牌) */
+  function toggleNote() {
+    S.noteMode = !S.noteMode; S.noteDigit = 0;
+    if (S.noteMode && S.g && S.sel >= 0) {
+      const d = S.g.puz[S.sel] || S.g.v[S.sel];
+      if (d && S.g.v.filter((x) => x === d).length < 9) S.noteDigit = d;
+    }
+    render();
+  }
+  function onKey(d, note) { inputDigit(d, note); }
+  /* 數字牌短按:筆記模式下揀數字(再按取消),一般模式下填數字 */
+  function padTap(d) {
+    if (!canAct()) return;
+    if (S.noteMode) { if (S.noteDigit) { if (S.noteDigit !== d) { S.noteDigit = d; render(); } } else inputDigit(d, true); } else inputDigit(d, false);
+  }
+  /* 筆記模式已揀數字:點空格切換該格的筆記 */
+  function noteTap(i) {
+    if (!(S.noteMode && S.noteDigit && canAct())) return;
+    const g = S.g;
+    if (g.puz[i] || g.v[i]) { S.sel = i; render(); return; }
+    S.hint = null; S.sel = i;
+    pushUndo(g); g.notes[i] ^= bit(S.noteDigit);
+    saveGame(); render();
+  }
+  /* 手機瀏覽器(特別係 iOS)會喺 pointerdown 改動畫面後唔發出 click,所以筆記改為喺 pointerup(放手)時直接寫入,click 只作後備 */
+  const ptNote = { i: -1, t: 0 };
+  function bindEvents() {
+    document.addEventListener('click', (e) => {
+      const k = e.target.closest('.key');
+      if (k) {
+        if (e.detail === 0 && k.getAttribute('aria-disabled') !== 'true') padTap(+k.dataset.d);
+        return;
+      }
+      const ce = e.target.closest('.cell');
+      if (ce) { const ci = +ce.dataset.i; if (ptNote.i === ci && Date.now() - ptNote.t < 800) { ptNote.i = -1; return; } noteTap(ci); return; }
+      const t = e.target.closest('[data-act]');
+      if (t && !t.disabled) { const f = ACTS[t.dataset.act]; if (f) f(t, e); return; }
+      const sc = e.target.closest('[data-scrim]');
+      if (sc && e.target === sc) { S.modal = null; render(); }
+    });
+    $('#board').addEventListener('pointerdown', (e) => {
+      const c = e.target.closest('.cell');
+      if (!c || S.paused || !S.g) return;
+      S.sel = +c.dataset.i;
+      renderBoard(); renderPad();
+    });
+    let downCell = -1;
+    $('#board').addEventListener('pointerdown', (e) => { const c = e.target.closest('.cell'); downCell = c ? +c.dataset.i : -1; ptNote.i = -1; });
+    $('#board').addEventListener('pointerup', (e) => {
+      const c = e.target.closest('.cell');
+      if (!c || downCell < 0 || +c.dataset.i !== downCell) return;
+      const i = downCell; downCell = -1;
+      if (!(S.noteMode && S.noteDigit && canAct()) || S.g.puz[i] || S.g.v[i]) return;
+      ptNote.i = i; ptNote.t = Date.now();
+      noteTap(i);
+    });
+    $('#board').addEventListener('pointercancel', () => { downCell = -1; });
+    $('#board').addEventListener('animationend', (e) => { if (e.target.classList) e.target.classList.remove('pop'); });
+    /* 數字牌:短按依目前模式輸入,長按改用另一種模式 */
+    let press = null;
+    const pad = $('#pad');
+    pad.addEventListener('contextmenu', (e) => e.preventDefault());
+    pad.addEventListener('pointerdown', (e) => {
+      const k = e.target.closest('.key');
+      if (!k || k.getAttribute('aria-disabled') === 'true') return;
+      const d = +k.dataset.d;
+      press = { d, long: false };
+      const p = press;
+      p.t = setTimeout(() => { p.long = true; if (navigator.vibrate) { try { navigator.vibrate(12); } catch (x) {} } onKey(d, !S.noteMode); }, 420);
+    });
+    const endPress = (cancel) => (e) => {
+      if (!press) return;
+      clearTimeout(press.t);
+      const p = press; press = null;
+      if (!cancel && !p.long) padTap(p.d);
+    };
+    pad.addEventListener('pointerup', endPress(false));
+    pad.addEventListener('pointercancel', endPress(true));
+    pad.addEventListener('pointerleave', endPress(true));
+
+    document.addEventListener('keydown', (e) => {
+      if (S.modal) { if (e.key === 'Escape' && ['settings', 'stats', 'confirm'].includes(S.modal.type)) { S.modal = null; render(); } return; }
+      if (S.screen !== 'game' || !S.g) return;
+      const k = e.key;
+      if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
+      if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (k === 'p' || k === 'P') { togglePause(); return; }
+      if (S.paused) return;
+      if (k.indexOf('Arrow') === 0) {
+        e.preventDefault();
+        if (S.sel < 0) S.sel = 40;
+        let r = E.RW[S.sel], c = E.CL[S.sel];
+        if (k === 'ArrowUp') r = Math.max(0, r - 1);
+        else if (k === 'ArrowDown') r = Math.min(8, r + 1);
+        else if (k === 'ArrowLeft') c = Math.max(0, c - 1);
+        else c = Math.min(8, c + 1);
+        S.sel = r * 9 + c;
+        renderBoard(); renderPad();
+      } else if (/^(Digit|Numpad)[1-9]$/.test(e.code)) {
+        e.preventDefault();
+        inputDigit(+e.code.slice(-1), e.shiftKey ? !S.noteMode : S.noteMode);
+      } else if (k === 'Backspace' || k === 'Delete' || k === '0') { e.preventDefault(); eraseCell(); }
+      else if (k === 'n' || k === 'N' || k === ' ') { e.preventDefault(); toggleNote(); }
+      else if (k === 'h' || k === 'H') openHint();
+      else if (k === 'Escape' && S.hint) { S.hint = null; render(); }
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && S.screen === 'game' && S.g && S.g.status === 'play' && !S.modal && !S.paused) { S.paused = true; saveGame(); render(); }
+    });
+  }
+
+  /* ---------- 計時 ---------- */
+  let last = performance.now(), sinceSave = 0;
+  function tick() {
+    const now = performance.now(), dt = now - last;
+    last = now;
+    const g = S.g;
+    if (S.screen !== 'game' || !g || g.status !== 'play' || S.paused || S.modal || document.hidden) return;
+    g.elapsed += dt; sinceSave += dt;
+    updateTimer();
+    if (g.flags.timed && g.elapsed >= g.limitMs) { saveGame(); lose('time'); return; }
+    if (sinceSave > 5000) { sinceSave = 0; saveGame(); }
+  }
+
+  function boot() {
+    loadPrefs(); loadSavedMeta();
+    buildBoard(); bindEvents(); render();
+    setInterval(tick, 250);
+  }
+  boot();
+})();
+</script>
+
+</body></html>
