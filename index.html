@@ -1,5 +1,9 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>魔橋數獨</title>
+<title>數獨</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E%3Crect width=%22512%22 height=%22512%22 rx=%22112%22 fill=%22%23151a24%22/%3E%3Crect x=%2296%22 y=%2296%22 width=%22320%22 height=%22320%22 rx=%2226%22 fill=%22none%22 stroke=%22%23e9edf3%22 stroke-width=%2212%22/%3E%3Cpath d=%22M203 96v320M309 96v320M96 203h320M96 309h320%22 stroke=%22%23e9edf3%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3Crect x=%22209%22 y=%22209%22 width=%2294%22 height=%2294%22 rx=%2212%22 fill=%22%23ffd43b%22/%3E%3Ctext x=%22256%22 y=%22285%22 font-size=%2278%22 font-weight=%22900%22 text-anchor=%22middle%22 fill=%22%23151a24%22 font-family=%22Arial%2CHelvetica%2Csans-serif%22%3E9%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#e9edf3">
+<meta name="apple-mobile-web-app-title" content="數獨">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -159,7 +163,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .resume .rt { display: flex; flex-direction: column; min-width: 0; font-size: 13px; color: var(--muted); }
 .resume .rt b { color: var(--ink); font-size: 14px; }
 @media (min-width: 900px) {
-  .lobby { flex-direction: row; justify-content: center; align-items: center; gap: clamp(32px, 7vw, 110px); min-height: 100%; padding: 0 0 4vh; }
+  .lobby { flex-direction: row; justify-content: center; align-items: center; gap: clamp(32px, 7vw, 110px); min-height: calc(100dvh - 32px); padding: 0; }
   .hero { text-align: left; }
   .hero h1 { font-size: clamp(110px, 12vw, 160px); padding-left: 0; }
   .fan { justify-content: flex-start; --tw: clamp(52px, 5.2vw, 68px); padding-left: 8px; }
@@ -265,8 +269,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .key.done { background: var(--surface); color: var(--muted); border-color: var(--line-2); box-shadow: 0 2px 0 var(--line-2); cursor: default; opacity: 0.7; }
 .key.done .kr { color: var(--ok); opacity: 1; }
 
-.kbdhelp { display: none; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); padding: 2px 4px; }
-.kbdhelp span { white-space: nowrap; }
 .klist { display: flex; flex-direction: column; }
 .krow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); }
 .krow:last-child { border-bottom: 0; }
@@ -277,7 +279,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .kc .x { padding: 2px 8px 2px 0; color: var(--muted); font-weight: 400; }
 .kc.cap { background: var(--hl); border-color: var(--hl-line); color: var(--on-hl); }
 .kc.add button { color: var(--muted); padding: 2px 12px; }
-.kbdhelp kbd { font-family: var(--num); font-size: 11.5px; font-weight: 700; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; margin-right: 2px; }
 @media (min-width: 900px) {
   .game { max-width: 1800px; }
   .play {
@@ -288,12 +289,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
   }
   .boardcol, .side { display: contents; }
   .tray { grid-column: 1; grid-row: 1 / span 8; width: var(--bs); }
-  .pad, .chips, .assist, .tools, .kbdhelp { grid-column: 2; width: 100%; }
+  .pad, .chips, .assist, .tools { grid-column: 2; width: 100%; }
   .pad { grid-row: 1; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .chips { grid-row: 2; justify-content: flex-start; }
   .assist { grid-row: 3; }
   .tools { grid-row: 4; }
-  .kbdhelp { grid-row: 5; display: flex; }
   .key { aspect-ratio: 1 / 0.8; flex-direction: row; gap: 10px; }
   .key .kd { font-size: clamp(28px, 3vw, 42px); }
   .key .kr { font-size: 13px; align-self: flex-end; margin-bottom: 14%; }
@@ -373,7 +373,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <div class="side">
         <div class="assist" id="hint" hidden></div>
         <div class="tools" id="tools"></div>
-        <div class="kbdhelp" id="kbdhelp" aria-label="鍵盤快捷鍵"></div>
       </div>
     </div>
   </div>
@@ -823,7 +822,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   const KEYDEF = [
     ['up', '上移', ['ArrowUp', 'w', 'k']], ['down', '下移', ['ArrowDown', 's', 'j']],
     ['left', '左移', ['ArrowLeft', 'a', 'h']], ['right', '右移', ['ArrowRight', 'd', 'l']],
-    ['note', '筆記模式', ['n', 'Space']], ['nextd', '筆記數字:下一個', ['Tab']], ['prevd', '筆記數字:上一個', ['Shift+Tab']],
+    ['mark', '筆記:進入 / 標記當前數字', ['Space']], ['note', '筆記模式開關', ['n']], ['nextd', '筆記數字:下一個', ['Tab']], ['prevd', '筆記數字:上一個', ['Shift+Tab']],
     ['erase', '清除', ['Backspace', 'Delete']], ['hint', '提示', ['t']], ['hintnext', '提示:下一步 / 套用', ['Enter']],
     ['auto', '自動筆記', ['f']], ['rollback', '回溯', ['r']], ['pause', '暫停 / 繼續', ['p']],
   ];
@@ -832,7 +831,12 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   function loadKeys() {
     let o = {};
     try { o = JSON.parse(LS.get('sdk-keys') || '{}') || {}; } catch (e) { o = {}; }
-    for (const [a, , d] of KEYDEF) KEYS[a] = Array.isArray(o[a]) ? o[a].filter((x) => typeof x === 'string').slice(0, 4) : d.slice();
+    const seen = new Set();
+    for (const [a, , d] of KEYDEF) {
+      KEYS[a] = Array.isArray(o[a]) ? o[a].filter((x) => typeof x === 'string').slice(0, 4) : d.slice();
+      KEYS[a] = KEYS[a].filter((x) => !seen.has(x));
+      KEYS[a].forEach((x) => seen.add(x));
+    }
     buildKeyAct();
   }
   function buildKeyAct() {
@@ -1344,7 +1348,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
         return `<div class="krow"><b>${label}</b><div class="kchips">${chips}${add}</div></div>`;
       }).join('');
       return `<div class="overlay" data-scrim="1"><div class="card" role="dialog" aria-modal="true" aria-label="快捷鍵" tabindex="-1" style="width:min(100%,620px)"><h2>快捷鍵</h2>
-        <p>按一下按鍵就可以改,然後按你想用的鍵;按 Esc 取消。「×」移除,「＋」新增後備按鍵。已被其他功能使用的鍵會轉移到這裡。數字 1–9、Shift+數字、Ctrl+Z / Y 和 Esc 固定不能改。</p>
+        <p>按一下按鍵就可以改,然後按你想用的鍵;按 Esc 取消。「×」移除,「＋」新增後備按鍵。已被其他功能使用的鍵會轉移到這裡。數字 1–9、Shift+數字、Ctrl+Z / Y 和 Esc(結束筆記模式 / 關閉提示)固定不能改。</p>
         <div class="klist">${rows}</div>
         <div class="row" style="justify-content:space-between"><button class="btn" data-act="kreset">還原預設</button><button class="btn primary" data-act="kback">完成</button></div>
       </div></div>`;
@@ -1387,37 +1391,12 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     lastModalType = t;
   }
 
-  function renderKbd() {
-    const el = $('#kbdhelp');
-    if (!el) return;
-    const kk = (a) => KEYS[a].map(kbdTag).join(' ');
-    const mv = [];
-    for (let n = 0; n < 4; n++) {
-      const g = ['up', 'down', 'left', 'right'].map((a) => KEYS[a][n]).filter(Boolean);
-      if (g.length) mv.push(g.map(kbdTag).join(''));
-    }
-    const rows = [
-      '<span><kbd>1</kbd>–<kbd>9</kbd> 填數</span>',
-      mv.length ? `<span>${mv.join(' ')} 移動</span>` : '',
-      KEYS.note.length ? `<span>${kk('note')} 筆記</span>` : '',
-      KEYS.nextd.length || KEYS.prevd.length ? `<span>${kk('nextd')} ${kk('prevd')} 換筆記數字</span>` : '',
-      '<span><kbd>Shift</kbd>+數字 臨時筆記</span>',
-      KEYS.erase.length ? `<span>${kk('erase')} 清除</span>` : '',
-      KEYS.hint.length || KEYS.hintnext.length ? `<span>${kk('hint')} ${kk('hintnext')} 提示 / 下一步 / 套用</span>` : '',
-      KEYS.auto.length ? `<span>${kk('auto')} 自動筆記</span>` : '',
-      KEYS.rollback.length ? `<span>${kk('rollback')} 回溯</span>` : '',
-      '<span><kbd>Ctrl</kbd>+<kbd>Z</kbd> 撤銷 · <kbd>Ctrl</kbd>+<kbd>Y</kbd> 重做</span>',
-      `<span>${KEYS.pause.length ? kk('pause') + ' 暫停 · ' : ''}<kbd>Esc</kbd> 關閉提示</span>`,
-    ];
-    el.innerHTML = rows.join('');
-  }
   function render() {
     const lobby = S.screen === 'lobby';
     $('#lobby').hidden = !lobby;
     $('#game').hidden = lobby;
     if (lobby) $('#lobby').innerHTML = lobbyHTML();
     else if (S.g) { if (S.noteDigit && S.g.v.filter((x) => x === S.noteDigit).length >= 9) S.noteDigit = 0; renderTop(); renderBoard(); renderStatus(); renderHint(); renderTools(); renderPad(); }
-    renderKbd();
     renderModal();
   }
 
@@ -1660,6 +1639,14 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     }
     render();
   }
+  /* 鍵盤:喺所選空格切換「當前筆記數字」 */
+  function markNote() {
+    if (!canAct() || S.sel < 0 || !S.noteDigit) return;
+    const g = S.g, i = S.sel;
+    if (g.puz[i] || g.v[i]) { say('這格已有數字,移到空格再標記'); return; }
+    S.hint = null; pushUndo(g); g.notes[i] ^= bit(S.noteDigit);
+    saveGame(); render();
+  }
   function onKey(d, note) { inputDigit(d, note); }
   /* 數字牌短按:筆記模式下揀數字(再按取消),一般模式下填數字 */
   function padTap(d) {
@@ -1783,6 +1770,12 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
         renderBoard(); renderPad();
       } else if (act === 'erase' || k === '0') { e.preventDefault(); eraseCell(); }
       else if (act === 'note') { e.preventDefault(); toggleNote(); }
+      else if (act === 'mark') {
+        e.preventDefault();
+        if (!S.noteMode) toggleNote();
+        else if (S.noteDigit) markNote();
+        else say('先選一個有數字的格再按此鍵進入數字筆記,或直接按數字鍵寫筆記');
+      }
       else if (act === 'hint') openHint();
       else if (act === 'auto') autoNotes();
       else if (act === 'rollback') rollback();
@@ -1794,7 +1787,12 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
         for (let n = 0; n < 9; n++) { d = ((d - 1 + dir + 9) % 9) + 1; if (S.g.v.filter((x) => x === d).length < 9) { S.noteDigit = d; break; } }
         render();
       }
-      else if (k === 'Escape' && S.hint) { S.hint = null; render(); }
+      else if (k === 'Escape') {
+        if (S.hint) S.hint = null;
+        else if (S.noteMode) { S.noteMode = false; S.noteDigit = 0; }
+        else return;
+        render();
+      }
     });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && S.screen === 'game' && S.g && S.g.status === 'play' && !S.modal && !S.paused) { S.paused = true; saveGame(); render(); }
