@@ -1360,7 +1360,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       if (hm.tgt.has(i)) cls += ' hT';
       if (hm.fc.has(i)) cls += ' hF';
       if ((hl === 'full' || nd) && sv && v === sv && i !== sel && !S.hint) cls += ' same';
-      if (showErr && v && marks.conf[i]) cls += ' conf';
+      if (S.set.err && v && marks.conf[i]) cls += ' conf'; /* 同行/列/宮重覆:只看規則,盲填也標示 */
       if (v && ((showErr && marks.wrong[i]) || (S.check && S.check.has(i)))) cls += ' wrong';
       if (i === sel && !S.hint) cls += ' sel';
       if (peers && E.BX[i] === E.BX[sel] && r !== E.RW[sel] && c !== E.CL[sel]) cls += ' bx';
@@ -1510,7 +1510,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       <div class="srow"><div class="stx"><b>${label}</b><small>${sub}</small></div>
       <button class="sw" role="switch" aria-checked="${!!L[key]}" aria-label="${label}" ${disabled ? 'aria-disabled="true"' : ''} data-act="flag" data-v="${key}"><i></i></button></div>`;
     return `
-      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.2 · 2026-10-29</p>
+      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.2.1 · 2026-10-30</p>
       </div>
       <div class="panel">
         ${resume}
@@ -1578,7 +1578,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       return `<div class="overlay" data-scrim="1"><div class="card" role="dialog" aria-modal="true" aria-label="設定" tabindex="-1"><h2>設定</h2>
         <div class="ctl">
           <div><h3>選格時反光</h3><div class="seg" role="group" aria-label="選格時反光">${hl.map(([k, n]) => `<button class="${S.set.hl === k ? 'on' : ''}" data-act="hl" data-v="${k}" aria-pressed="${S.set.hl === k}">${n}</button>`).join('')}</div></div>
-          ${sw('err', '錯誤提示', '填錯的數字會標示紅色(盲填模式不顯示)')}
+          ${sw('err', '錯誤提示', '同行、列、宮重覆的數字會標示紅色;填錯的數字在盲填模式不顯示')}
           ${sw('auto', '筆記自動清除', '填入數字後,同行、列、宮的相同筆記自動消失')}
           ${sw('anim', '完成動畫', '完成一行、一列、一宮或整盤時閃動')}
           <div class="srow"><div class="stx"><b>鍵盤快捷鍵</b><small>自訂移動、筆記、提示等按鍵</small></div><button class="btn small" data-act="keys">修改</button></div>
