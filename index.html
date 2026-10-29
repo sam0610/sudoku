@@ -1166,7 +1166,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
         sigs[i] = sig;
         const el = cellEls[i];
         el.className = cls + (el.classList.contains('pop') ? ' pop' : '');
-        el.innerHTML = inner;
+        if (el._in !== inner) { el.innerHTML = inner; el._in = inner; } /* 內容冇變就唔重建子元素,避免手機上正在觸控嘅元素被移除而收唔到放手事件 */
         el.setAttribute('aria-label', aria);
         el.setAttribute('aria-pressed', i === sel ? 'true' : 'false');
       }
@@ -1736,13 +1736,15 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       S.sel = +c.dataset.i;
       renderBoard(); renderPad();
     });
-    let downCell = -1, downTouch = false, longT = 0, longFired = false, lastTap = { i: -1, t: 0 };
+    let downX = 0, downY = 0, downCell = -1, downTouch = false, longT = 0, longFired = false, lastTap = { i: -1, t: 0 };
     const vib = () => { if (navigator.vibrate) { try { navigator.vibrate(12); } catch (x) {} } };
     $('#board').addEventListener('contextmenu', (e) => e.preventDefault());
     $('#board').addEventListener('pointerdown', (e) => {
       const c = e.target.closest('.cell');
       downCell = c ? +c.dataset.i : -1; ptNote.i = -1; longFired = false; clearTimeout(longT);
       downTouch = e.pointerType === 'touch' || e.pointerType === 'pen';
+      downX = e.clientX; downY = e.clientY;
+      if (c && downTouch) { try { $('#board').setPointerCapture(e.pointerId); } catch (x) {} }
       /* 手機:筆記模式已揀數字,長按空格 = 填入該數字(快點兩下亦可) */
       if (c && downTouch && S.noteMode && S.noteDigit && S.g && !S.paused) {
         const i = downCell;
@@ -1754,8 +1756,10 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     });
     $('#board').addEventListener('pointerup', (e) => {
       clearTimeout(longT);
-      const c = e.target.closest('.cell');
-      if (!c || downCell < 0 || +c.dataset.i !== downCell) return;
+      if (downCell < 0) return;
+      const c = e.target.closest ? e.target.closest('.cell') : null;
+      if (c && +c.dataset.i !== downCell) { downCell = -1; return; }
+      if (downTouch && Math.hypot(e.clientX - downX, e.clientY - downY) > 14) { downCell = -1; return; }
       const i = downCell; downCell = -1;
       if (longFired) { longFired = false; return; }
       if (!canAct()) return;
