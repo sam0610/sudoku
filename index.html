@@ -43,6 +43,7 @@
   --hp: #c9ecda;
   --ht: #a7e2c3;
   --he: #ffe2c0;
+  --k-blk: #ffc98a; --k-exc: #cfd6e2; --k-pat: #bcd4ff; --k-elim: #ffc4bf; --k-dig: #fff1b8;
   --key: #151a24;
   --on-key: #ffffff;
   --nm-line: #1f9d6b; --nm-peer: #c6e9d6; --nm-same: #aedcc2; --nm-sel: #8ccfab; --nm-sel-line: #1f9d6b; --nm-box: #f1faf5;
@@ -61,6 +62,7 @@
     --t-red: #e0485a; --t-blue: #4d86f0; --t-black: #3a4354; --t-orange: #f08a2a;
     --cell: #1b212b; --peer: #262e3b; --same: #4d4519; --mine: #8ab4ff;
     --hh: #17302a; --hp: #1a4535; --ht: #1f6a4c; --he: #4a3416;
+    --k-blk: #7a4a12; --k-exc: #3a4455; --k-pat: #2b4a82; --k-elim: #6b2c30; --k-dig: #4d4519;
     --key: #3a4354; --shade: rgba(0, 0, 0, 0.4); --scrim: rgba(0, 0, 0, 0.6);
     --nm-line: #5fd3a2; --nm-peer: #2a4a3b; --nm-same: #33604b; --nm-sel: #3b7458; --nm-sel-line: #5fd3a2; --nm-box: #1b2623;
     color-scheme: dark;
@@ -73,6 +75,7 @@
   --t-red: #e0485a; --t-blue: #4d86f0; --t-black: #3a4354; --t-orange: #f08a2a;
   --cell: #1b212b; --peer: #262e3b; --same: #4d4519; --mine: #8ab4ff;
   --hh: #17302a; --hp: #1a4535; --ht: #1f6a4c; --he: #4a3416;
+    --k-blk: #7a4a12; --k-exc: #3a4455; --k-pat: #2b4a82; --k-elim: #6b2c30; --k-dig: #4d4519;
   --key: #3a4354; --shade: rgba(0, 0, 0, 0.4); --scrim: rgba(0, 0, 0, 0.6);
   --nm-line: #5fd3a2; --nm-peer: #2a4a3b; --nm-same: #33604b; --nm-sel: #3b7458; --nm-sel-line: #5fd3a2; --nm-box: #1b2623;
   color-scheme: dark;
@@ -235,6 +238,22 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .nt span.m { color: var(--on-hl); background: var(--nm-sel); border-radius: 50%; }
 .nt span.x { color: var(--bad); text-decoration: line-through; }
 .cell.sel .nt { color: var(--on-hl); }
+
+/* 提示標示:目標(黃)、擋住的數字(橙)、放不了的格(灰 ✕)、關鍵的格(藍)、可排除(紅)、檢查範圍(綠) */
+.cell.hh { background: var(--hh); }
+.cell.hD { background: var(--k-dig); }
+.cell.hX { background: var(--k-exc); }
+.cell.hX::after { content: "✕"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--num); font-weight: 700; font-size: 5.4cqw; color: var(--muted); opacity: 0.55; pointer-events: none; }
+.cell.hP { background: var(--k-pat); box-shadow: inset 0 0 0 2px var(--t-blue); }
+.cell.hE { background: var(--k-elim); box-shadow: inset 0 0 0 2px var(--t-red); }
+.cell.hB { background: var(--k-blk); box-shadow: inset 0 0 0 2.5px var(--t-orange); }
+.cell.hB b { color: var(--ink); }
+.cell.hT { background: var(--hl); box-shadow: inset 0 0 0 3px var(--ink); z-index: 1; }
+.cell.hT b, .cell.hT .pv { color: var(--on-hl); }
+.cell.hF { outline: 3px solid var(--t-red); outline-offset: -3px; z-index: 3; }
+.nt.hn { font-size: 3.1cqw; color: var(--ink); }
+.nt.hn span { font-weight: 700; }
+.nt.hn span.x { color: var(--bad); text-decoration: line-through; text-decoration-thickness: 2px; }
 @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.14); background-color: var(--hl); } 100% { transform: scale(1); } }
 .board { position: relative; }
 .cell.pop { animation: pop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) both; animation-delay: var(--d, 0ms); z-index: 2; }
@@ -249,14 +268,39 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chip.on b { color: var(--on-hl); }
 .side { width: min(100%, 560px); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 
-/* 提示面板(沿用魔橋的輔助框) */
-.assist { background: var(--surface); border: 1.5px solid var(--ok-2); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+/* 提示面板:分頁講解,盤面同步標示 */
+.assist { background: var(--surface); border: 1.5px solid var(--ok-2); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; min-width: 0; }
 .assist .ah { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
 .assist .ah b { font-size: 15px; color: var(--ok); }
 .assist .ah span { font-size: 12px; color: var(--muted); }
-.assist p { margin: 0; line-height: 1.55; }
+.assist .lg { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--muted); }
+.assist .lg span { display: inline-flex; align-items: center; gap: 4px; }
+.assist .lg i { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid var(--ink); display: inline-block; }
+.assist .lg i.k-tgt { background: var(--hl); }
+.assist .lg i.k-blk { background: var(--k-blk); border-color: var(--t-orange); }
+.assist .lg i.k-exc { background: var(--k-exc); border-color: var(--muted); }
+.assist .lg i.k-pat { background: var(--k-pat); border-color: var(--t-blue); }
+.assist .lg i.k-elim { background: var(--k-elim); border-color: var(--t-red); }
+.assist .lg i.k-hs { background: var(--hh); border-color: var(--ok-2); }
+.assist .lg i.k-dig { background: var(--k-dig); border-color: var(--hl-line); }
+.assist .hb { display: flex; flex-direction: column; gap: 6px; line-height: 1.6; min-width: 0; }
+.assist .hb p { margin: 0; }
+.assist .hb .note { color: var(--muted); font-size: 13px; }
+.assist .hb .ln { color: var(--muted); font-size: 13px; }
+.assist .hb ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.assist .hb ul.rl2 { list-style: disc; padding-left: 20px; gap: 4px; }
+.assist .hb .rs { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface-2); border-radius: 8px; padding: 4px 8px; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.assist .hb .rs:hover { background: var(--tray); }
+.assist .hb .rs.on { background: var(--hl); border-color: var(--hl-line); color: var(--on-hl); }
+.assist .hb details.why { border: 1px solid var(--line); border-radius: 10px; padding: 4px 8px; }
+.assist .hb details.why summary { cursor: pointer; font-size: 13px; color: var(--ok); font-weight: 500; }
+.assist .hb details.why[open] { display: flex; flex-direction: column; gap: 4px; }
+.assist .hb .rsh { font-weight: 700; font-size: 13px; margin-top: 4px; }
 .assist .ar2 { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
 .assist .btn.apply { border-color: var(--ok-2); color: var(--ok); font-weight: 700; }
+@media (max-width: 600px) {
+  .assist { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 30; max-height: 42vh; overflow: auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+}
 
 /* 工具列 */
 .tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -397,7 +441,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 <div id="toast" role="status"></div>
 
 <script>
-/* ====== 數獨引擎(純函式,無 DOM)======
+/* v1.2:提示改為教學式(只看盤面、不理會筆記、逐頁講解並標示)。
+====== 數獨引擎(純函式,無 DOM)======
    以函式包起來,讓網頁主程式與 Web Worker 共用同一份原始碼。 */
 function SudokuEngine() {
   'use strict';
@@ -789,17 +834,224 @@ function SudokuEngine() {
   }
 
   /* ---------- 提示、分類 ---------- */
-  function hint(vals, sol, elim) {
+  /* ---------- 教學式提示 ----------
+     只看盤面上已填的數字,完全不理會玩家寫過什麼筆記(玩家沒寫筆記也一樣能提示)。
+     找出一格「現在用邏輯推得出答案」的空格;若要先做幾步排除推理,只保留真正用得上的步驟。
+     回傳逐頁講解,每頁附上要在盤面標示的格(marks)。 */
+  const BOXNAME = ['左上', '上中', '右上', '左中', '正中', '右中', '左下', '下中', '右下'];
+  const bitOf = (d) => 1 << (d - 1);
+  const hIdx = (h) => (h.t === 'row' ? h.n : h.t === 'col' ? 9 + h.n : 18 + h.n);
+  const rcN = (i) => `第 ${RW[i] + 1} 行第 ${CL[i] + 1} 列`;
+  const hN = (h) => (h < 9 ? `第 ${h + 1} 行` : h < 18 ? `第 ${h - 8} 列` : `${BOXNAME[h - 18]}宮`);
+  const hKind = (h) => (h < 9 ? '行' : h < 18 ? '列' : '宮');
+  const listN = (a) => a.map(rcN).join('、');
+  const uniq = (a) => Array.from(new Set(a));
+  const bd = (x) => `<b>${x}</b>`;
+  const item = (cells, html) => `<li><button type="button" class="rs" data-fc="${cells.join(',')}">${html}</button></li>`;
+  const mk = (o) => Object.assign({ hs: [], dig: 0, tgt: [], blk: [], exc: [], pat: [], elim: [], cand: {}, stk: {}, show: {} }, o);
+  const candMap = (c, cells) => { const o = {}; for (const i of cells) o[i] = c[i]; return o; };
+  const maskMap = (cells, m) => { const o = {}; for (const i of cells) o[i] = m; return o; };
+  const elimMap = (elim) => { const o = {}; for (const e of elim) o[e.i] = (o[e.i] | 0) | bitOf(e.d); return o; };
+
+  /* 盤面上,誰擋住了「格 j 放數字 e」:同行、同列、同宮已有 e */
+  function blockerOf(v, j, e) {
+    for (const h of HOUSE_OF[j]) for (const k of HOUSES[h]) if (k !== j && v[k] === e) return { by: k, h };
+    return null;
+  }
+  function whyRow(v, j, e, lead) {
+    const b = blockerOf(v, j, e);
+    if (b) return { by: b.by, row: item([j, b.by], `${lead}同${hKind(b.h)}已有 ${bd(e)}(${rcN(b.by)})`) };
+    return { by: -1, row: item([j], `${lead}已由前面的推理排除`) };
+  }
+  /* 在一個範圍(行/列/宮)裡,除了 keep 以外,逐格說明為什麼放不了數字 e */
+  function houseExcl(v, cells, e, keep) {
+    const filled = [], exc = [], blk = [], rows = [];
+    for (const j of cells) {
+      if (keep.includes(j)) continue;
+      if (v[j]) { filled.push(j); continue; }
+      exc.push(j);
+      const w = whyRow(v, j, e, `${rcN(j)}:`);
+      rows.push(w.row); if (w.by >= 0) blk.push(w.by);
+    }
+    return { filled, exc, blk: uniq(blk), rows };
+  }
+  /* 逐格說明:為什麼這些格只剩目前的可能數字 */
+  function candExcl(v, c, cells) {
+    const blk = [], parts = [];
+    for (const i of cells) {
+      const rows = [];
+      for (let e = 1; e <= 9; e++) {
+        if (c[i] & bitOf(e)) continue;
+        const w = whyRow(v, i, e, `數字 ${e}:`);
+        rows.push(w.row); if (w.by >= 0) blk.push(w.by);
+      }
+      parts.push(`<p class="rsh">${rcN(i)}:目前只能放 ${bd(digitsOf(c[i]).join('、'))}</p><ul class="rl">${rows.join('')}</ul>`);
+    }
+    return { blk: uniq(blk), html: `<details class="why"><summary>為什麼只剩這些數字?(展開看逐個排除的原因)</summary>${parts.join('')}</details>` };
+  }
+  const exclHTML = (ex) => (ex.filled.length ? `<p class="ln">已有數字:${listN(ex.filled)}</p>` : '') + (ex.rows.length ? `<ul class="rl">${ex.rows.join('')}</ul>` : '');
+
+  /* 排除型步驟的講解(c = 該步之前的候選狀態) */
+  function stepPages(s, v, c) {
+    const P = [], tag = s.tech;
+    const ec = uniq(s.elim.map((e) => e.i));
+    const NOTE = '<p class="note">這一步只是推理,不用在盤面上做任何事。</p>';
+    switch (s.tech) {
+      case 'lcp': case 'lcc': {
+        const d = s.digits[0], src = hIdx(s.house), tg = hIdx(s.tech === 'lcp' ? s.line : s.box);
+        const ex = houseExcl(v, HOUSES[src], d, s.cells);
+        P.push({ tag, title: `縮小數字 ${d} 的位置`, html: `<p>先看${bd(hN(src))}:數字 ${bd(d)} 還沒有填,它一定要放在這個範圍內。逐格檢查,除了${listN(s.cells)}(藍色)以外,其餘的格子都放不了 ${d}:</p>${exclHTML(ex)}<p>所以${hN(src)}的 ${bd(d)} 只能放在${listN(s.cells)},而它們全部落在${bd(hN(tg))}上。</p>`, marks: mk({ hs: [src], dig: d, blk: ex.blk, exc: ex.exc, pat: s.cells, cand: maskMap(s.cells, bitOf(d)) }) });
+        P.push({ tag, title: '推理:刪除同一條線上的其他位置', html: `<p>${hN(src)}一定要在${hN(tg)}放一個 ${bd(d)}。因此${hN(tg)}上屬於其他範圍的格子,不可能再放 ${bd(d)}(紅色格):${listN(ec)}。</p>${NOTE}`, marks: mk({ hs: [src, tg], dig: d, pat: s.cells, elim: ec, cand: maskMap(s.cells, bitOf(d)), stk: elimMap(s.elim) }) });
+        break;
+      }
+      case 'np': case 'nt': {
+        const h = hIdx(s.house), N = s.cells.length, ds = s.digits.join('、');
+        const ce = candExcl(v, c, s.cells);
+        P.push({ tag, title: N === 2 ? '找出一組數對' : '找出一組三數組', html: `<p>看${bd(hN(h))}:${listN(s.cells)}(藍色)目前可能的數字,加起來只有 ${bd(ds)} 這 ${N} 個(每格的可能數字顯示在格內)。</p>${ce.html}`, marks: mk({ hs: [h], pat: s.cells, blk: ce.blk, cand: candMap(c, s.cells) }) });
+        P.push({ tag, title: '推理:刪除其他格的這些數字', html: `<p>這 ${N} 格剛好要放下 ${bd(ds)},所以${hN(h)}裡其他格子都不能放 ${ds}(紅色格):${listN(ec)}。</p>${NOTE}`, marks: mk({ hs: [h], pat: s.cells, elim: ec, cand: candMap(c, s.cells), stk: elimMap(s.elim) }) });
+        break;
+      }
+      case 'hp': {
+        const h = hIdx(s.house), [a, b] = s.digits;
+        const ea = houseExcl(v, HOUSES[h], a, s.cells), eb = houseExcl(v, HOUSES[h], b, s.cells);
+        P.push({ tag, title: `數字 ${a} 和 ${b} 的位置`, html: `<p>看${bd(hN(h))}:數字 ${bd(a)} 和 ${bd(b)} 都還沒有填。逐格檢查,它們都只能放在${listN(s.cells)}(藍色)這兩格。</p><details class="why"><summary>為什麼 ${a} 只能放這兩格?</summary>${exclHTML(ea)}</details><details class="why"><summary>為什麼 ${b} 只能放這兩格?</summary>${exclHTML(eb)}</details>`, marks: mk({ hs: [h], pat: s.cells, blk: uniq(ea.blk.concat(eb.blk)), exc: uniq(ea.exc.concat(eb.exc)), cand: maskMap(s.cells, bitOf(a) | bitOf(b)) }) });
+        P.push({ tag, title: '推理:這兩格不能放其他數字', html: `<p>${bd(a)} 和 ${bd(b)} 一定要佔用${listN(s.cells)}這兩格,所以這兩格不可能放其他數字(紅色字)。</p>${NOTE}`, marks: mk({ hs: [h], pat: s.cells, elim: ec, cand: maskMap(s.cells, bitOf(a) | bitOf(b)), stk: elimMap(s.elim) }) });
+        break;
+      }
+      case 'xw': {
+        const d = s.digits[0], byRow = s.base === 'row', lw = byRow ? '行' : '列', cw = byRow ? '列' : '行';
+        const L = s.lines.map((a) => (byRow ? a : 9 + a)), C = s.covers.map((k) => (byRow ? 9 + k : k));
+        const exs = L.map((h) => houseExcl(v, HOUSES[h], d, s.cells.filter((i) => HOUSES[h].includes(i))));
+        P.push({ tag, title: `數字 ${d} 形成 X-Wing`, html: `<p>先看數字 ${bd(d)}:在${bd(L.map(hN).join('、'))}這兩${lw}裡,${d} 都只剩兩個可以放的位置,而且剛好落在同樣的兩${cw}(${C.map(hN).join('、')}),四個位置形成一個長方形(藍色):${listN(s.cells)}。</p>` + L.map((h, k) => `<details class="why"><summary>為什麼${hN(h)}的 ${d} 只剩兩個位置?</summary>${exclHTML(exs[k])}</details>`).join(''), marks: mk({ hs: L, dig: d, pat: s.cells, blk: uniq([].concat(...exs.map((x) => x.blk))), exc: uniq([].concat(...exs.map((x) => x.exc))), cand: maskMap(s.cells, bitOf(d)) }) });
+        P.push({ tag, title: '推理:長方形的四個角', html: `<p>${hN(L[0])}和${hN(L[1])}各自一定要放一個 ${bd(d)},位置只可能是長方形的四個角。不論選哪一種對角放法,${C.map(hN).join('、')}都會各用掉一個 ${d}。</p><p>因此這兩${cw}上其他的格子都不能放 ${bd(d)}(紅色格):${listN(ec)}。</p>${NOTE}`, marks: mk({ hs: L.concat(C), dig: d, pat: s.cells, elim: ec, cand: maskMap(s.cells, bitOf(d)), stk: elimMap(s.elim) }) });
+        break;
+      }
+      case 'xyw': {
+        const p = s.pivot, A = s.wings[0], B = s.wings[1], x = s.digits[0], y = s.digits[1], z = s.z;
+        const ce = candExcl(v, c, s.cells);
+        const cm = candMap(c, s.cells);
+        P.push({ tag, title: 'XY-Wing:找出三個相連的格', html: `<p>${bd(rcN(p))}(黃色,樞紐)只能放 ${bd(x + '、' + y)};${rcN(A)}(藍色,翼)只能放 ${bd(x + '、' + z)};${rcN(B)}(藍色,翼)只能放 ${bd(y + '、' + z)}。兩個翼都和樞紐在同一行、列或宮裡,能互相看到。</p>${ce.html}`, marks: mk({ tgt: [p], pat: [A, B], blk: ce.blk, cand: cm }) });
+        P.push({ tag, title: '推理:樞紐的兩種可能', html: `<ul class="rl2"><li>樞紐是 ${bd(x)}:${rcN(A)}不能再放 ${x},所以它是 ${bd(z)}。</li><li>樞紐是 ${bd(y)}:${rcN(B)}不能再放 ${y},所以它是 ${bd(z)}。</li></ul><p>不論哪一種,兩個翼之中一定有一個是 ${bd(z)}。</p>`, marks: mk({ tgt: [p], pat: [A, B], cand: cm }) });
+        P.push({ tag, title: `推理:同時看到兩個翼的格不能放 ${z}`, html: `<p>能同時看到兩個翼的格子,不可能是 ${bd(z)}(紅色格):${listN(ec)}。</p>${NOTE}`, marks: mk({ tgt: [p], pat: [A, B], elim: ec, cand: cm, stk: elimMap(s.elim) }) });
+        break;
+      }
+    }
+    return P;
+  }
+
+  /* 最後解出一格的講解:唯一候選數 / 隱性單數 */
+  function finalPages(f, v, c) {
+    const P = [], p = f.place[0], i = p.i, d = p.d, tag = '解出這一格';
+    if (f.tech === 'ns') {
+      const hs = HOUSE_OF[i], blk = [], rows = [];
+      for (let e = 1; e <= 9; e++) {
+        if (e === d) continue;
+        const w = whyRow(v, i, e, `數字 ${e}:`);
+        rows.push(w.row); if (w.by >= 0) blk.push(w.by);
+      }
+      P.push({ tag, title: '鎖定目標格', html: `<p>請看${bd(rcN(i))}(${BOXNAME[BX[i]]}宮,黃色格)。這一格是空的。我們用它所在的行、列、宮(綠色範圍)裡已有的數字,逐個排除不可能的數字。</p>`, marks: mk({ tgt: [i], hs }) });
+      P.push({ tag, title: '排除不可能的數字', html: `<p>這一格不能放下面 ${rows.length} 個數字(點選每一項,盤面上會圈出造成排除的格):</p><ul class="rl">${rows.join('')}</ul>`, marks: mk({ tgt: [i], hs, blk: uniq(blk) }) });
+      P.push({ tag, title: '結論', html: `<p>1 至 9 之中,只有 ${bd(d)} 沒有被排除,所以${rcN(i)}填 ${bd(d)}。</p>`, marks: mk({ tgt: [i], hs, show: { [i]: d } }) });
+      return P;
+    }
+    const h = hIdx(f.house), ex = houseExcl(v, HOUSES[h], d, [i]);
+    P.push({ tag, title: `${hN(h)}的數字 ${d}`, html: `<p>請看${bd(hN(h))}(綠色範圍):這個範圍一定要有一個 ${bd(d)},但目前還沒有填。盤面上已有的 ${d} 用淺黃色標出。接下來逐格檢查,看看 ${d} 能放在哪裡。</p>`, marks: mk({ hs: [h], dig: d }) });
+    P.push({ tag, title: '逐格排除', html: `<p>檢查${hN(h)}裡其他的格子(點選每一項,盤面上會圈出造成排除的 ${d}):</p>${exclHTML(ex)}<p>全部排除後,只剩 ${bd(rcN(i))}(黃色格)沒有被排除。</p>`, marks: mk({ hs: [h], dig: d, tgt: [i], blk: ex.blk, exc: ex.exc }) });
+    P.push({ tag, title: '結論', html: `<p>${hN(h)}裡,數字 ${bd(d)} 只剩 ${bd(rcN(i))} 這一個位置可以放,所以這格填 ${bd(d)}。</p>`, marks: mk({ hs: [h], dig: d, tgt: [i], show: { [i]: d } }) });
+    return P;
+  }
+
+  /* 目前盤面(含已套用的推理)中,所有可以直接填的格 */
+  function singles(st) {
+    const out = [], seen = new Set();
+    for (let i = 0; i < 81; i++) {
+      if (!st.v[i] && POP[st.c[i]] === 1) { out.push({ tech: 'ns', place: [{ i, d: lowIdx(st.c[i]) + 1 }], cells: [i] }); seen.add(i); }
+    }
+    for (let h = 0; h < 27; h++) {
+      for (let d = 1; d <= 9; d++) {
+        const b = bitOf(d);
+        let cnt = 0, at = -1;
+        for (const k of HOUSES[h]) if (st.c[k] & b) { cnt++; at = k; }
+        if (cnt === 1 && !seen.has(at)) { seen.add(at); out.push({ tech: 'hs', place: [{ i: at, d }], cells: [at], digits: [d], house: houseInfo(h) }); }
+      }
+    }
+    return out;
+  }
+  /* 一個步驟依賴哪些格、哪些數字的候選(用來剔除用不上的前置推理) */
+  function depsOf(s) {
+    switch (s.tech) {
+      case 'ns': return { cells: s.cells, mask: ALL };
+      case 'hs': case 'lcp': case 'lcc': return { cells: HOUSES[hIdx(s.house)], mask: bitOf(s.digits[0]) };
+      case 'hp': return { cells: HOUSES[hIdx(s.house)], mask: bitOf(s.digits[0]) | bitOf(s.digits[1]) };
+      case 'xw': return { cells: [].concat(...s.lines.map((a) => HOUSES[s.base === 'row' ? a : 9 + a])), mask: bitOf(s.digits[0]) };
+      default: return { cells: s.cells, mask: ALL }; /* np nt xyw */
+    }
+  }
+  function prune(chain, p) {
+    const need = new Set(), q = [];
+    const pull = (dep, before) => {
+      for (let k = before - 1; k >= 0; k--) {
+        if (need.has(k)) continue;
+        if (chain[k].s.elim.some((e) => dep.cells.includes(e.i) && (dep.mask & bitOf(e.d)))) { need.add(k); q.push(k); }
+      }
+    };
+    pull(depsOf(p), chain.length);
+    while (q.length) { const k = q.pop(); pull(depsOf(chain[k].s), k); }
+    return Array.from(need).sort((a, b) => a - b);
+  }
+  const FIND_ELIM = [findLCP, findLCC, (x) => findNaked(x, 2), findHP, (x) => findNaked(x, 3), findXW, findXYW];
+
+  function hintPlan(vals, sol, sel) {
     const wrong = [];
     for (let i = 0; i < 81; i++) if (vals[i] && vals[i] !== sol[i]) wrong.push(i);
-    if (wrong.length) return { tech: 'error', tier: 0, place: [], elim: [], cells: wrong, digits: [], house: null };
-    const st = makeState(vals, elim);
-    const s = findStep(st, 9);
-    if (s) return s;
-    let best = -1, bn = 99;
-    for (let i = 0; i < 81; i++) if (!vals[i] && POP[st.c[i]] < bn) { bn = POP[st.c[i]]; best = i; }
-    if (best < 0) return null;
-    return { tech: 'reveal', tier: 5, place: [{ i: best, d: sol[best] }], elim: [], cells: [best], digits: [sol[best]], house: null };
+    if (wrong.length) {
+      return { error: true, tech: 'error', techs: ['error'], place: null, cells: wrong, nChain: 0, pages: [{ tag: '檢查', title: '盤面有錯誤', html: `<p>${listN(wrong.slice(0, 6))}${wrong.length > 6 ? ' 等' : ''}填的數字和答案不符(共 ${wrong.length} 格,紅色標出)。要先修正,才能繼續推理。</p>`, marks: mk({ elim: wrong }) }] };
+    }
+    const st = makeState(vals, null);
+    const chain = [];
+    let cands = [];
+    for (let guard = 0; guard < 150; guard++) {
+      cands = singles(st);
+      if (cands.length) break;
+      let s = null;
+      for (const f of FIND_ELIM) { s = f(st); if (s) break; }
+      if (!s) break;
+      chain.push({ s, c: Int16Array.from(st.c) });
+      applyStep(st, s);
+    }
+    if (!cands.length) {
+      const s0 = makeState(vals, null);
+      let bi = -1, bn = 99;
+      for (let i = 0; i < 81; i++) if (!s0.v[i] && POP[s0.c[i]] < bn) { bn = POP[s0.c[i]]; bi = i; }
+      if (bi < 0) return null;
+      const d = sol[bi];
+      return { error: false, tech: 'reveal', techs: ['reveal'], place: { i: bi, d }, nChain: 0, pages: [{ tag: '直接提示', title: '需要試填才能確定', html: `<p>目前盤面上,常見的推理方法(唯一候選數、隱性單數、區塊摒除、數對、X-Wing 等)都找不到可以直接填的格,這一題要用試填才能確定。</p><p>為了讓你繼續,${bd(rcN(bi))}(黃色格)目前可以放 ${bd(digitsOf(s0.c[bi]).join('、'))},而答案是 ${bd(d)}。</p>`, marks: mk({ tgt: [bi], cand: candMap(s0.c, [bi]), show: { [bi]: d } }) }] };
+    }
+    const dist = (i) => (sel == null || sel < 0 ? 0 : i === sel ? -1 : BX[i] === BX[sel] ? 0 : (RW[i] === RW[sel] || CL[i] === CL[sel]) ? 1 : 2);
+    let best = null;
+    for (const p of cands) {
+      const keep = prune(chain, p), i = p.place[0].i;
+      const score = [keep.length, dist(i), p.tech === 'ns' ? 0 : 1, i];
+      let better = !best;
+      if (best) for (let k = 0; k < 4; k++) { if (score[k] !== best.score[k]) { better = score[k] < best.score[k]; break; } }
+      if (better) best = { p, keep, score };
+    }
+    /* 只用保留下來的步驟重新演算一次,取得每一步當時的候選狀態 */
+    const st2 = makeState(vals, null), steps = [];
+    for (const k of best.keep) { const s = chain[k].s; steps.push({ s, c: Int16Array.from(st2.c) }); applyStep(st2, s); }
+    const pl = best.p.place[0];
+    const fins = singles(st2).filter((x) => x.place[0].i === pl.i && x.place[0].d === pl.d);
+    const fin = fins.find((x) => x.tech === 'ns') || fins[0] || best.p;
+    const pages = [];
+    steps.forEach((x, k) => {
+      const ps = stepPages(x.s, st2.v, x.c);
+      ps.forEach((pg) => { pg.tag = `前置推理 ${k + 1} / ${steps.length} · ${TECH[x.s.tech].name}`; });
+      if (k === 0) ps[0].html = `<p class="note">目前盤面上找不到可以直接填的格,所以先做 ${steps.length} 步推理,再解出一格。</p>` + ps[0].html;
+      pages.push(...ps);
+    });
+    const finC = fins.length ? st2.c : st.c;
+    pages.push(...finalPages(fin, st2.v, finC));
+    return { error: false, tech: fin.tech, techs: steps.map((x) => x.s.tech).concat(fin.tech), place: { i: pl.i, d: pl.d }, nChain: steps.length, pages };
   }
 
   /* 玩家在 vals(填入前)的狀態下把 d 填進 i:n 唯一候選數、h 隱性單數、x 進階/憑直覺 */
@@ -817,7 +1069,7 @@ function SudokuEngine() {
 
   return {
     ALL, POP, RW, CL, BX, HOUSES, HOUSE_OF, PEERS, TECH, DIFF,
-    search, makeState, candidates, findStep, applyStep, logicSolve, rate, generate, hint, classify, toStr, fromStr, digitsOf,
+    search, makeState, candidates, findStep, applyStep, logicSolve, rate, generate, hintPlan, classify, toStr, fromStr, digitsOf,
   };
 }
 if (typeof module !== 'undefined') module.exports = SudokuEngine;
@@ -839,7 +1091,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     ['up', '上移', ['ArrowUp', 'w', 'k']], ['down', '下移', ['ArrowDown', 's', 'j']],
     ['left', '左移', ['ArrowLeft', 'a', 'h']], ['right', '右移', ['ArrowRight', 'd', 'l']],
     ['mark', '筆記:進入 / 標記當前數字,連按兩下填入', ['Space']], ['fill', '筆記模式:填入當前數字', ['v']], ['note', '筆記模式開關', ['n']], ['nextd', '筆記數字:下一個', ['Tab']], ['prevd', '筆記數字:上一個', ['Shift+Tab']],
-    ['erase', '清除', ['Backspace', 'Delete']], ['hint', '提示', ['t']], ['hintnext', '提示:下一步 / 套用', ['Enter']],
+    ['erase', '清除', ['Backspace', 'Delete']], ['hint', '提示', ['t']], ['hintnext', '提示:下一步 / 完成', ['Enter']],
     ['auto', '自動筆記', ['f']], ['check', '核對正確答案', ['c']], ['pause', '暫停 / 繼續', ['p']],
   ];
   const KEYS = {};
@@ -1057,56 +1309,18 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   const rcName = (i) => `第 ${E.RW[i] + 1} 行第 ${E.CL[i] + 1} 列`;
   const cellsText = (a) => a.map(rcName).join('、');
   const houseName = (h) => (h.t === 'row' ? `第 ${h.n + 1} 行` : h.t === 'col' ? `第 ${h.n + 1} 列` : `${BOXN[h.n]}宮`);
-  function explain(s) {
-    const d = s.digits;
-    switch (s.tech) {
-      case 'ns': {
-        const p = s.place[0];
-        return { title: '唯一候選數', short: `有一格只剩下一個候選數,留意${rcName(p.i)}。`, long: `${rcName(p.i)}所在的行、列、宮已經出現了其他八個數字,只有 ${p.d} 還沒有出現,所以這格填 ${p.d}。`, apply: '填入數字' };
-      }
-      case 'hs': {
-        const p = s.place[0];
-        return { title: '隱性單數', short: `留意${houseName(s.house)}裡的數字 ${p.d},它只剩一個位置可以放。`, long: `在${houseName(s.house)}裡,數字 ${p.d} 只有${rcName(p.i)}這一個位置可以放,所以這格填 ${p.d}。`, apply: '填入數字' };
-      }
-      case 'lcp':
-        return { title: '區塊摒除', short: `留意${houseName(s.house)}裡的數字 ${d[0]},它的位置全部在同一條線上。`, long: `在${houseName(s.house)},數字 ${d[0]} 的候選位置全部落在${houseName(s.line)}上。這個宮一定要在${houseName(s.line)}放一個 ${d[0]},所以${houseName(s.line)}上屬於其他宮的格子都不能是 ${d[0]},可以刪除 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
-      case 'lcc':
-        return { title: '區塊摒除', short: `留意${houseName(s.house)}裡的數字 ${d[0]},它的位置全部在同一個宮內。`, long: `在${houseName(s.house)},數字 ${d[0]} 的候選位置全部落在${houseName(s.box)}內。${houseName(s.box)}一定要在這條線上放一個 ${d[0]},所以${houseName(s.box)}內不在這條線上的格子都不能是 ${d[0]},可以刪除 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
-      case 'np':
-        return { title: '顯性數對', short: `${houseName(s.house)}裡有兩格只剩同樣的兩個候選數。`, long: `${houseName(s.house)}裡的${cellsText(s.cells)}都只剩 ${d[0]}、${d[1]} 兩個候選數。這兩格一定剛好放 ${d[0]} 和 ${d[1]},所以${houseName(s.house)}其他格可以刪除 ${d[0]}、${d[1]},共 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
-      case 'nt':
-        return { title: '顯性三數組', short: `${houseName(s.house)}裡有三格的候選數只用到三個數字。`, long: `${houseName(s.house)}裡的${cellsText(s.cells)},候選數加起來只有 ${d.join('、')} 三個數字。這三格一定剛好放這三個數,所以${houseName(s.house)}其他格可以刪除它們,共 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
-      case 'hp':
-        return { title: '隱性數對', short: `${houseName(s.house)}裡有兩個數字只能放在同樣的兩格。`, long: `在${houseName(s.house)}裡,數字 ${d[0]} 和 ${d[1]} 都只能放在${cellsText(s.cells)}這兩格,所以這兩格一定是 ${d[0]} 和 ${d[1]},可以刪除這兩格的其他候選數,共 ${s.elim.length} 個。`, apply: '刪除候選數' };
-      case 'xw': {
-        const lineW = s.base === 'row' ? '行' : '列', coverW = s.base === 'row' ? '列' : '行';
-        const L = s.lines.map((x) => x + 1).join('、'), C = s.covers.map((x) => x + 1).join('、');
-        return { title: 'X-Wing', short: `數字 ${d[0]} 在兩${lineW}裡各只有兩個位置,而且剛好對齊成長方形。`, long: `數字 ${d[0]} 在第 ${L} ${lineW}各只有兩個候選位置,而且都在第 ${C} ${coverW}。這四格會形成一個 X,無論哪種放法,第 ${C} ${coverW}都會用掉 ${d[0]},所以這兩${coverW}其餘格子不能是 ${d[0]},共可刪除 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
-      }
-      case 'xyw':
-        return { title: 'XY-Wing', short: `有一格(樞紐)連著兩個翼格,三格的候選數剛好首尾相扣。`, long: `${rcName(s.pivot)}是樞紐,候選數是 ${d[0]}、${d[1]}。它的兩個翼格${rcName(s.wings[0])}(${d[0]}、${d[2]})和${rcName(s.wings[1])}(${d[1]}、${d[2]})。樞紐不論是 ${d[0]} 還是 ${d[1]},其中一個翼格必定是 ${d[2]},所以同時看到兩個翼格的格子不能是 ${d[2]},共可刪除 ${s.elim.length} 個候選。`, apply: '刪除候選數' };
-      case 'error':
-        return { title: '檢查錯誤', short: `盤面上有 ${s.cells.length} 格和答案不符,先修正再繼續。`, long: `${cellsText(s.cells.slice(0, 4))}${s.cells.length > 4 ? ' 等' : ''}填的數字和答案不符。可以按「回溯」回到最後一個沒有錯誤的狀態。`, apply: '回溯' };
-      default: {
-        const p = s.place[0];
-        return { title: '答案提示', short: '目前找不到可以直接套用的技巧,先給你一格答案。', long: `目前找不到可以直接套用的技巧。${rcName(p.i)}的答案是 ${p.d}。`, apply: '填入數字' };
-      }
-    }
-  }
+  /* 提示:把目前這一頁的標示轉成集合,供盤面繪製 */
   function hintMarks(h) {
-    const m = { house: new Set(), pat: new Set(), tgt: new Map(), elim: new Map() };
+    const m = { hs: new Set(), dig: 0, tgt: new Set(), blk: new Set(), exc: new Set(), pat: new Set(), elim: new Set(), cand: new Map(), stk: new Map(), show: new Map(), fc: new Set() };
     if (!h) return m;
-    const s = h.step;
-    const addH = (hi) => { const idx = hi.t === 'row' ? hi.n : hi.t === 'col' ? 9 + hi.n : 18 + hi.n; for (const i of E.HOUSES[idx]) m.house.add(i); };
-    if (s.house) addH(s.house);
-    if (s.line) addH(s.line);
-    if (s.box) addH(s.box);
-    if (s.tech === 'xw') for (const a of s.lines) addH({ t: s.base, n: a });
-    for (const i of s.cells) m.pat.add(i);
-    if (h.stage === 2) {
-      for (const p of s.place) m.tgt.set(p.i, p.d);
-      for (const e of s.elim) m.elim.set(e.i, (m.elim.get(e.i) | 0) | bit(e.d));
-    }
+    const pg = h.plan.pages[h.page].marks;
+    for (const hh of pg.hs) for (const i of E.HOUSES[hh]) m.hs.add(i);
+    m.dig = pg.dig || 0;
+    for (const k of ['tgt', 'blk', 'exc', 'pat', 'elim']) for (const i of pg[k]) m[k].add(i);
+    for (const k in pg.cand) m.cand.set(+k, pg.cand[k]);
+    for (const k in pg.stk) m.stk.set(+k, pg.stk[k]);
+    for (const k in pg.show) m.show.set(+k, pg.show[k]);
+    if (h.focus) for (const i of h.focus) m.fc.add(i);
     return m;
   }
 
@@ -1128,7 +1342,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     const sv = (sel >= 0 ? g.v[sel] : 0) || nd; /* 選中有數字嘅格:筆記模式同一般模式一樣,反光該數字所有格 */
     const nx = null; /* 筆記數字模式不再用斜線標示衝突格 */
     const marks = computeMarks(g), hm = hintMarks(S.hint);
-    const peers = sel >= 0 && hl !== 'off' ? new Set(E.PEERS[sel]) : null;
+    const peers = sel >= 0 && hl !== 'off' && !S.hint ? new Set(E.PEERS[sel]) : null;
     for (let i = 0; i < 81; i++) {
       const v = g.v[i], r = E.RW[i], c = E.CL[i];
       let cls = 'cell';
@@ -1137,25 +1351,37 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       cls += g.puz[i] ? ' given' : v ? ' user' : '';
       if (peers && peers.has(i)) cls += ' peer';
       if (nx && nx.has(i)) cls += ' nx';
-      if (hm.house.has(i)) cls += ' hh';
-      if ((hl === 'full' || nd) && sv && v === sv && i !== sel) cls += ' same';
-      if (hm.pat.has(i)) cls += ' hp';
-      if (hm.elim.has(i)) cls += ' he';
-      if (hm.tgt.has(i)) cls += ' ht';
+      if (hm.hs.has(i)) cls += ' hh';
+      if (hm.dig && v === hm.dig) cls += ' hD';
+      if (hm.exc.has(i)) cls += ' hX';
+      if (hm.pat.has(i)) cls += ' hP';
+      if (hm.elim.has(i)) cls += ' hE';
+      if (hm.blk.has(i)) cls += ' hB';
+      if (hm.tgt.has(i)) cls += ' hT';
+      if (hm.fc.has(i)) cls += ' hF';
+      if ((hl === 'full' || nd) && sv && v === sv && i !== sel && !S.hint) cls += ' same';
       if (showErr && v && marks.conf[i]) cls += ' conf';
       if (v && ((showErr && marks.wrong[i]) || (S.check && S.check.has(i)))) cls += ' wrong';
-      if (i === sel) cls += ' sel';
+      if (i === sel && !S.hint) cls += ' sel';
       if (peers && E.BX[i] === E.BX[sel] && r !== E.RW[sel] && c !== E.CL[sel]) cls += ' bx';
       let inner = '';
       if (v) inner = `<b>${v}</b>`;
-      else if (hm.tgt.has(i)) inner = `<b class="pv">${hm.tgt.get(i)}</b>`;
-      else {
-        const nm = g.notes[i], em = hm.elim.get(i) | 0;
-        if (nm || em) {
+      else if (hm.show.has(i)) inner = `<b class="pv">${hm.show.get(i)}</b>`;
+      else if (hm.cand.has(i) || hm.stk.has(i)) {
+        const cm = hm.cand.get(i) | 0, sm = hm.stk.get(i) | 0;
+        inner = '<i class="nt hn">';
+        for (let d = 1; d <= 9; d++) {
+          const on = cm & bit(d), x = sm & bit(d);
+          inner += `<span class="${x ? 'x' : ''}">${on || x ? d : ''}</span>`;
+        }
+        inner += '</i>';
+      } else {
+        const nm = g.notes[i];
+        if (nm) {
           inner = '<i class="nt">';
           for (let d = 1; d <= 9; d++) {
-            const on = nm & bit(d), x = em & bit(d);
-            inner += `<span class="${x ? 'x' : (hl === 'full' || nd) && sv === d && on ? 'm' : ''}">${on || x ? d : ''}</span>`;
+            const on = nm & bit(d);
+            inner += `<span class="${(hl === 'full' || nd) && sv === d && on && !S.hint ? 'm' : ''}">${on ? d : ''}</span>`;
           }
           inner += '</i>';
         }
@@ -1225,18 +1451,23 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     if (S.noteMode) h += `<span class="chip on">筆記模式 · ${S.noteDigit ? '數字 ' + S.noteDigit : '揀格再按數字'}</span>`;
     $('#status').innerHTML = h;
   }
+  const LEGEND = [['tgt', 'k-tgt', '目標格'], ['blk', 'k-blk', '擋住的數字'], ['exc', 'k-exc', '放不了的格'], ['pat', 'k-pat', '關鍵的格'], ['elim', 'k-elim', '可排除的格'], ['hs', 'k-hs', '檢查範圍'], ['dig', 'k-dig', '盤面上已有的這個數字']];
   function renderHint() {
     const el = $('#hint'), h = S.hint;
     if (!h) { el.hidden = true; el.innerHTML = ''; return; }
-    const ex = explain(h.step);
+    const pl = h.plan, n = pl.pages.length, pg = pl.pages[h.page], m = pg.marks, last = h.page >= n - 1;
+    const lg = LEGEND.filter(([k]) => (k === 'dig' ? m.dig : k === 'hs' ? m.hs.length : m[k].length)).map(([, c, t]) => `<span><i class="${c}"></i>${t}</span>`).join('');
     el.hidden = false;
     el.innerHTML = `
-      <div class="ah"><b>${ex.title}</b><span>${h.stage === 1 ? '先看看高亮的位置' : '詳細說明'}</span></div>
-      <p>${h.stage === 1 ? ex.short : ex.long}</p>
+      <div class="ah"><b>${pg.title}</b><span>${pg.tag ? pg.tag + ' · ' : ''}第 ${h.page + 1} / ${n} 頁</span></div>
+      ${lg ? `<div class="lg">${lg}</div>` : ''}
+      <div class="hb">${pg.html}</div>
       <div class="ar2">
-        ${h.stage === 1 ? '<button class="btn small" data-act="hint-more">詳細說明</button>' : `<button class="btn small apply" data-act="hint-apply">${ex.apply}</button>`}
-        <button class="btn small ghost" data-act="hint-close">關閉</button>
+        ${h.page > 0 ? '<button class="btn small ghost" data-act="hint-prev">上一步</button>' : ''}
+        ${pl.error && !S.g.flags.blind ? '<button class="btn small" data-act="hint-rb">回溯</button>' : ''}
+        ${last ? '<button class="btn small apply" data-act="hint-close">明白了</button>' : '<button class="btn small apply" data-act="hint-next">下一步</button><button class="btn small ghost" data-act="hint-close">關閉</button>'}
       </div>`;
+    el.scrollTop = 0;
   }
   function renderTools() {
     const g = S.g, live = g.status === 'play' && !S.paused;
@@ -1279,7 +1510,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       <div class="srow"><div class="stx"><b>${label}</b><small>${sub}</small></div>
       <button class="sw" role="switch" aria-checked="${!!L[key]}" aria-label="${label}" ${disabled ? 'aria-disabled="true"' : ''} data-act="flag" data-v="${key}"><i></i></button></div>`;
     return `
-      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.1 · 2026-10-28</p>
+      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.2 · 2026-10-29</p>
       </div>
       <div class="panel">
         ${resume}
@@ -1510,31 +1741,22 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     const g = S.g;
     if (S.hint) { S.hint = null; render(); return; }
     if (g.maxHints && g.hints >= g.maxHints) { say('這局的提示已經用完'); return; }
-    const step = E.hint(g.v, g.sol, g.elim);
-    if (!step) { say('盤面已經完成了'); return; }
-    if (g.flags.blind && step.tech === 'error') { say('盤面有填錯的格,請先按「核對」查看(不扣提示次數)'); return; }
+    /* 提示只看盤面上已填的數字,不看任何筆記;並從所選的格附近找起 */
+    const plan = E.hintPlan(g.v, g.sol, S.sel);
+    if (!plan) { say('盤面已經完成了'); return; }
+    if (plan.error && g.flags.blind) { say('盤面有填錯的格,請先按「核對」查看(不扣提示次數)'); return; }
     g.hints++;
-    g.hintTech[step.tech] = (g.hintTech[step.tech] || 0) + 1;
-    S.hint = { step, stage: 1 };
+    for (const t of new Set(plan.techs)) g.hintTech[t] = (g.hintTech[t] || 0) + 1;
+    S.hint = { plan, page: 0, focus: null };
     saveGame(); render();
+    try { if (window.matchMedia('(max-width: 600px)').matches) window.scrollTo({ top: 0 }); } catch (x) {}
   }
-  function applyHint() {
-    if (!canAct() || !S.hint) return;
-    const g = S.g, s = S.hint.step;
-    if (s.tech === 'error') { S.hint = null; rollback(); render(); return; }
-    pushUndo(g);
-    S.hint = null;
-    if (s.place.length) {
-      const p = s.place[0];
-      S.sel = p.i;
-      const was = placeCore(g, p.i, p.d, 'H');
-      saveGame();
-      afterPlace(g, p.i, was, false);
-    } else {
-      for (const e of s.elim) { g.notes[e.i] &= ~bit(e.d); g.elim[e.i] |= bit(e.d); }
-      saveGame();
-    }
-    render();
+  function hintGo(dp) {
+    const h = S.hint;
+    if (!h) return;
+    const np = Math.min(h.plan.pages.length - 1, Math.max(0, h.page + dp));
+    if (np === h.page) return;
+    h.page = np; h.focus = null; render();
   }
   /* 核對:和正確答案比對,標示所有填錯的格(任何改動後自動取消標示) */
   function checkAnswer() {
@@ -1666,8 +1888,9 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     kcap: (t) => { S.cap = { a: t.dataset.a, i: +t.dataset.i }; render(); },
     kdel: (t) => { const a = t.dataset.a; KEYS[a].splice(+t.dataset.i, 1); S.cap = null; buildKeyAct(); saveKeys(); render(); },
     kreset: () => { for (const [a, , d] of KEYDEF) KEYS[a] = d.slice(); S.cap = null; buildKeyAct(); saveKeys(); render(); say('已還原預設快捷鍵'); },
-    'hint-more': () => { if (S.hint) { S.hint.stage = 2; render(); } },
-    'hint-apply': applyHint,
+    'hint-next': () => hintGo(1),
+    'hint-prev': () => hintGo(-1),
+    'hint-rb': () => { S.hint = null; rollback(); render(); },
     'hint-close': () => { S.hint = null; render(); },
     set: (t) => { const k = t.dataset.v; S.set[k] = !S.set[k]; savePrefs(); render(); },
     hl: (t) => { S.set.hl = t.dataset.v; savePrefs(); render(); },
@@ -1725,6 +1948,16 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       }
       const ce = e.target.closest('.cell');
       if (ce) { const ci = +ce.dataset.i; if (ptNote.i === ci && Date.now() - ptNote.t < 800) { ptNote.i = -1; return; } noteTap(ci); return; }
+      const rs = e.target.closest('.rs');
+      if (rs) {
+        if (!S.hint) return;
+        const cells = rs.dataset.fc.split(',').map(Number);
+        const same = !!S.hint.focus && S.hint.focus.join() === cells.join();
+        S.hint.focus = same ? null : cells;
+        $('#hint').querySelectorAll('.rs').forEach((b) => b.classList.toggle('on', !same && b === rs));
+        renderBoard();
+        return;
+      }
       const t = e.target.closest('[data-act]');
       if (t && !t.disabled) { const f = ACTS[t.dataset.act]; if (f) f(t, e); return; }
       const sc = e.target.closest('[data-scrim]');
@@ -1875,7 +2108,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       else if (act === 'hint') openHint();
       else if (act === 'auto') autoNotes();
       else if (act === 'check') { e.preventDefault(); checkAnswer(); }
-      else if (act === 'hintnext') { e.preventDefault(); if (!S.hint) openHint(); else if (S.hint.stage === 1) { S.hint.stage = 2; render(); } else applyHint(); }
+      else if (act === 'hintnext') { e.preventDefault(); if (!S.hint) openHint(); else if (S.hint.page < S.hint.plan.pages.length - 1) hintGo(1); else { S.hint = null; render(); } }
       else if ((act === 'nextd' || act === 'prevd') && S.noteMode) {
         e.preventDefault();
         const dir = act === 'prevd' ? -1 : 1;
