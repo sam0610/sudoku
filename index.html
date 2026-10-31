@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>數獨</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E%3Crect width=%22512%22 height=%22512%22 rx=%22112%22 fill=%22%23151a24%22/%3E%3Crect x=%2296%22 y=%2296%22 width=%22320%22 height=%22320%22 rx=%2226%22 fill=%22none%22 stroke=%22%23e9edf3%22 stroke-width=%2212%22/%3E%3Cpath d=%22M203 96v320M309 96v320M96 203h320M96 309h320%22 stroke=%22%23e9edf3%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3Crect x=%22209%22 y=%22209%22 width=%2294%22 height=%2294%22 rx=%2212%22 fill=%22%23ffd43b%22/%3E%3Ctext x=%22256%22 y=%22285%22 font-size=%2278%22 font-weight=%22900%22 text-anchor=%22middle%22 fill=%22%23151a24%22 font-family=%22Arial%2CHelvetica%2Csans-serif%22%3E9%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E%3Crect width=%22512%22 height=%22512%22 rx=%22112%22 fill=%22%23ffd43b%22/%3E%3Crect x=%2296%22 y=%2296%22 width=%22320%22 height=%22320%22 rx=%2228%22 fill=%22none%22 stroke=%22%23151a24%22 stroke-width=%2218%22/%3E%3Cpath d=%22M203 96v320M309 96v320M96 203h320M96 309h320%22 stroke=%22%23151a24%22 stroke-width=%2214%22 stroke-linecap=%22round%22/%3E%3Crect x=%22203%22 y=%22203%22 width=%22106%22 height=%22106%22 rx=%2214%22 fill=%22%23151a24%22/%3E%3Ctext x=%22256%22 y=%22292%22 font-size=%2288%22 font-weight=%22900%22 text-anchor=%22middle%22 fill=%22%23ffffff%22 font-family=%22Arial,Helvetica,sans-serif%22%3E9%3C/text%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#e9edf3">
 <meta name="apple-mobile-web-app-title" content="數獨">
@@ -1582,7 +1582,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       <div class="srow"><div class="stx"><b>${label}</b><small>${sub}</small></div>
       <button class="sw" role="switch" aria-checked="${!!L[key]}" aria-label="${label}" ${disabled ? 'aria-disabled="true"' : ''} data-act="flag" data-v="${key}"><i></i></button></div>`;
     return `
-      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.3 · 2026-10-31</p>
+      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.3.1 · 2026-10-31</p>
       </div>
       <div class="panel">
         ${resume}
