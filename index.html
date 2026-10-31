@@ -253,6 +253,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cell.hF { outline: 3px solid var(--t-red); outline-offset: -3px; z-index: 3; }
 .nt.hn { font-size: 3.1cqw; color: var(--ink); }
 .nt.hn span { font-weight: 700; }
+.nt.hn span.a { color: var(--ok); text-decoration: underline; text-decoration-thickness: 2px; }
 .nt.hn span.x { color: var(--bad); text-decoration: line-through; text-decoration-thickness: 2px; }
 @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.14); background-color: var(--hl); } 100% { transform: scale(1); } }
 .board { position: relative; }
@@ -282,6 +283,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .assist .lg i.k-pat { background: var(--k-pat); border-color: var(--t-blue); }
 .assist .lg i.k-elim { background: var(--k-elim); border-color: var(--t-red); }
 .assist .lg i.k-hs { background: var(--hh); border-color: var(--ok-2); }
+.assist .lg i.k-stk { background: var(--surface); border-color: var(--bad); }
+.assist .lg i.k-add { background: var(--surface); border-color: var(--ok-2); }
 .assist .lg i.k-dig { background: var(--k-dig); border-color: var(--hl-line); }
 .assist .hb { display: flex; flex-direction: column; gap: 6px; line-height: 1.6; min-width: 0; }
 .assist .hb p { margin: 0; }
@@ -296,6 +299,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .assist .hb details.why summary { cursor: pointer; font-size: 13px; color: var(--ok); font-weight: 500; }
 .assist .hb details.why[open] { display: flex; flex-direction: column; gap: 4px; }
 .assist .hb .rsh { font-weight: 700; font-size: 13px; margin-top: 4px; }
+.assist.paused { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 8px 12px; }
+.assist.paused .ah { flex-direction: column; gap: 0; align-items: flex-start; }
 .assist .ar2 { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
 .assist .btn.apply { border-color: var(--ok-2); color: var(--ok); font-weight: 700; }
 @media (max-width: 600px) {
@@ -848,7 +853,7 @@ function SudokuEngine() {
   const uniq = (a) => Array.from(new Set(a));
   const bd = (x) => `<b>${x}</b>`;
   const item = (cells, html) => `<li><button type="button" class="rs" data-fc="${cells.join(',')}">${html}</button></li>`;
-  const mk = (o) => Object.assign({ hs: [], dig: 0, tgt: [], blk: [], exc: [], pat: [], elim: [], cand: {}, stk: {}, show: {} }, o);
+  const mk = (o) => Object.assign({ hs: [], dig: 0, tgt: [], blk: [], exc: [], pat: [], elim: [], cand: {}, stk: {}, add: {}, show: {} }, o);
   const candMap = (c, cells) => { const o = {}; for (const i of cells) o[i] = c[i]; return o; };
   const maskMap = (cells, m) => { const o = {}; for (const i of cells) o[i] = m; return o; };
   const elimMap = (elim) => { const o = {}; for (const e of elim) o[e.i] = (o[e.i] | 0) | bitOf(e.d); return o; };
@@ -961,6 +966,55 @@ function SudokuEngine() {
     return P;
   }
 
+
+  /* ---------- 檢查玩家筆記 ----------
+     只比較這一步推理「用得到」的格和數字:
+     多咗 = 筆記有 d,但同行/列/宮已有 d(一定放不了);
+     少咗 = 筆記沒有 d,但 d 正是這格的答案(排除錯了)。
+     其他情況(例如玩家用進階推理排除的數字)不當作錯誤。 */
+  function relOf(s) {
+    const d = depsOf(s), rel = new Map();
+    for (const i of d.cells) rel.set(i, (rel.get(i) | 0) | d.mask);
+    for (const e of s.elim || []) rel.set(e.i, (rel.get(e.i) | 0) | bitOf(e.d));
+    return rel;
+  }
+  function noteIssues(v, notes, sol, rel) {
+    const out = [];
+    if (!notes) return out;
+    rel.forEach((mask, i) => {
+      if (v[i] || !notes[i]) return;
+      for (let d = 1; d <= 9; d++) {
+        if (!(mask & bitOf(d))) continue;
+        const has = notes[i] & bitOf(d);
+        if (has) { const b = blockerOf(v, i, d); if (b) out.push({ kind: 'extra', i, d, by: b.by, h: b.h }); }
+        else if (sol[i] === d) out.push({ kind: 'miss', i, d });
+      }
+    });
+    out.sort((a, b) => (a.kind === b.kind ? a.i - b.i || a.d - b.d : a.kind === 'miss' ? -1 : 1));
+    return out;
+  }
+  function notesPage(issues, notes) {
+    const cap = 10, shown = issues.slice(0, cap);
+    const rows = shown.map((x) => (x.kind === 'extra'
+      ? item([x.i, x.by], `${rcN(x.i)}:你寫咗 ${bd(x.d)},但同${hKind(x.h)}已有 ${bd(x.d)}(${rcN(x.by)}),這格放不了 ${x.d},要劃走`)
+      : item([x.i], `${rcN(x.i)}:你沒有寫 ${bd(x.d)},但同行、同列、同宮都沒有 ${bd(x.d)} 擋住這格,不應該排除,要補回 ${bd(x.d)}`)));
+    const cells = [], blk = [], cand = {}, stk = {}, add = {};
+    for (const x of shown) {
+      cells.push(x.i);
+      if (x.kind === 'extra') { blk.push(x.by); stk[x.i] = (stk[x.i] | 0) | bitOf(x.d); } else add[x.i] = (add[x.i] | 0) | bitOf(x.d);
+    }
+    for (const i of cells) cand[i] = notes[i] & ~(stk[i] | 0);
+    const miss = shown.filter((x) => x.kind === 'miss').length, extra = shown.length - miss;
+    const parts = [];
+    if (miss) parts.push(`${miss} 處排除錯了(劃走了不該劃走的數字)`);
+    if (extra) parts.push(`${extra} 處漏了劃走(已被同行、列、宮擋住的數字還留著)`);
+    return {
+      tag: '你嘅筆記', title: '先檢查你嘅筆記',
+      html: `<p>這一步推理會用到下面幾格,你嘅筆記有 ${bd(issues.length)} 處和盤面不符:${parts.join(',')}。點選每一項,盤面會圈出相關的格:</p><ul class="rl">${rows.join('')}</ul>${issues.length > cap ? `<p class="ln">另外還有 ${issues.length - cap} 處類似的,沒有逐項列出。</p>` : ''}<p class="note">筆記是你自己的記錄,先照這頁修正,下面的推理才成立。</p>`,
+      marks: mk({ elim: uniq(cells), blk: uniq(blk), cand, stk, add }),
+    };
+  }
+
   /* 目前盤面(含已套用的推理)中,所有可以直接填的格 */
   function singles(st) {
     const out = [], seen = new Set();
@@ -1001,7 +1055,7 @@ function SudokuEngine() {
   }
   const FIND_ELIM = [findLCP, findLCC, (x) => findNaked(x, 2), findHP, (x) => findNaked(x, 3), findXW, findXYW];
 
-  function hintPlan(vals, sol, sel) {
+  function hintPlan(vals, sol, sel, notes, prefer) {
     const wrong = [];
     for (let i = 0; i < 81; i++) if (vals[i] && vals[i] !== sol[i]) wrong.push(i);
     if (wrong.length) {
@@ -1031,9 +1085,10 @@ function SudokuEngine() {
     let best = null;
     for (const p of cands) {
       const keep = prune(chain, p), i = p.place[0].i;
-      const score = [keep.length, dist(i), p.tech === 'ns' ? 0 : 1, i];
+      const iss = noteIssues(vals, notes, sol, relOf(p)).length;
+      const score = [prefer === i ? 0 : 1, keep.length, dist(i), iss, p.tech === 'ns' ? 0 : 1, i];
       let better = !best;
-      if (best) for (let k = 0; k < 4; k++) { if (score[k] !== best.score[k]) { better = score[k] < best.score[k]; break; } }
+      if (best) for (let k = 0; k < 6; k++) { if (score[k] !== best.score[k]) { better = score[k] < best.score[k]; break; } }
       if (better) best = { p, keep, score };
     }
     /* 只用保留下來的步驟重新演算一次,取得每一步當時的候選狀態 */
@@ -1051,7 +1106,15 @@ function SudokuEngine() {
     });
     const finC = fins.length ? st2.c : st.c;
     pages.push(...finalPages(fin, st2.v, finC));
-    return { error: false, tech: fin.tech, techs: steps.map((x) => x.s.tech).concat(fin.tech), place: { i: pl.i, d: pl.d }, nChain: steps.length, pages };
+    const rel = new Map();
+    const addRel = (s) => relOf(s).forEach((m, i) => rel.set(i, (rel.get(i) | 0) | m));
+    steps.forEach((x) => addRel(x.s)); addRel(fin);
+    const issues = noteIssues(vals, notes, sol, rel);
+    let userNotes = false;
+    if (notes) rel.forEach((m, i) => { if (!vals[i] && notes[i]) userNotes = true; });
+    if (issues.length) pages.unshift(notesPage(issues, notes));
+    else if (userNotes) pages[0].html = '<p class="note">你嘅筆記和這一步推理吻合,可以直接看解法。</p>' + pages[0].html;
+    return { error: false, tech: fin.tech, techs: steps.map((x) => x.s.tech).concat(fin.tech), place: { i: pl.i, d: pl.d }, nChain: steps.length, noteIssues: issues.length, pages };
   }
 
   /* 玩家在 vals(填入前)的狀態下把 d 填進 i:n 唯一候選數、h 隱性單數、x 進階/憑直覺 */
@@ -1311,14 +1374,15 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   const houseName = (h) => (h.t === 'row' ? `第 ${h.n + 1} 行` : h.t === 'col' ? `第 ${h.n + 1} 列` : `${BOXN[h.n]}宮`);
   /* 提示:把目前這一頁的標示轉成集合,供盤面繪製 */
   function hintMarks(h) {
-    const m = { hs: new Set(), dig: 0, tgt: new Set(), blk: new Set(), exc: new Set(), pat: new Set(), elim: new Set(), cand: new Map(), stk: new Map(), show: new Map(), fc: new Set() };
-    if (!h) return m;
+    const m = { hs: new Set(), dig: 0, tgt: new Set(), blk: new Set(), exc: new Set(), pat: new Set(), elim: new Set(), cand: new Map(), stk: new Map(), add: new Map(), show: new Map(), fc: new Set() };
+    if (!h || h.paused) return m;
     const pg = h.plan.pages[h.page].marks;
     for (const hh of pg.hs) for (const i of E.HOUSES[hh]) m.hs.add(i);
     m.dig = pg.dig || 0;
     for (const k of ['tgt', 'blk', 'exc', 'pat', 'elim']) for (const i of pg[k]) m[k].add(i);
     for (const k in pg.cand) m.cand.set(+k, pg.cand[k]);
     for (const k in pg.stk) m.stk.set(+k, pg.stk[k]);
+    for (const k in pg.add) m.add.set(+k, pg.add[k]);
     for (const k in pg.show) m.show.set(+k, pg.show[k]);
     if (h.focus) for (const i of h.focus) m.fc.add(i);
     return m;
@@ -1341,8 +1405,8 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     const sel = S.sel, hl = S.set.hl, nd = S.noteMode ? S.noteDigit : 0;
     const sv = (sel >= 0 ? g.v[sel] : 0) || nd; /* 選中有數字嘅格:筆記模式同一般模式一樣,反光該數字所有格 */
     const nx = null; /* 筆記數字模式不再用斜線標示衝突格 */
-    const marks = computeMarks(g), hm = hintMarks(S.hint);
-    const peers = sel >= 0 && hl !== 'off' && !S.hint ? new Set(E.PEERS[sel]) : null;
+    const marks = computeMarks(g), hm = hintMarks(S.hint), hintOn = !!S.hint && !S.hint.paused;
+    const peers = sel >= 0 && hl !== 'off' && !hintOn ? new Set(E.PEERS[sel]) : null;
     for (let i = 0; i < 81; i++) {
       const v = g.v[i], r = E.RW[i], c = E.CL[i];
       let cls = 'cell';
@@ -1359,20 +1423,20 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       if (hm.blk.has(i)) cls += ' hB';
       if (hm.tgt.has(i)) cls += ' hT';
       if (hm.fc.has(i)) cls += ' hF';
-      if ((hl === 'full' || nd) && sv && v === sv && i !== sel && !S.hint) cls += ' same';
+      if ((hl === 'full' || nd) && sv && v === sv && i !== sel && !hintOn) cls += ' same';
       if (S.set.err && v && marks.conf[i]) cls += ' conf'; /* 同行/列/宮重覆:只看規則,盲填也標示 */
       if (v && ((showErr && marks.wrong[i]) || (S.check && S.check.has(i)))) cls += ' wrong';
-      if (i === sel && !S.hint) cls += ' sel';
+      if (i === sel && !hintOn) cls += ' sel';
       if (peers && E.BX[i] === E.BX[sel] && r !== E.RW[sel] && c !== E.CL[sel]) cls += ' bx';
       let inner = '';
       if (v) inner = `<b>${v}</b>`;
       else if (hm.show.has(i)) inner = `<b class="pv">${hm.show.get(i)}</b>`;
-      else if (hm.cand.has(i) || hm.stk.has(i)) {
-        const cm = hm.cand.get(i) | 0, sm = hm.stk.get(i) | 0;
+      else if (hm.cand.has(i) || hm.stk.has(i) || hm.add.has(i)) {
+        const cm = hm.cand.get(i) | 0, sm = hm.stk.get(i) | 0, am = hm.add.get(i) | 0;
         inner = '<i class="nt hn">';
         for (let d = 1; d <= 9; d++) {
-          const on = cm & bit(d), x = sm & bit(d);
-          inner += `<span class="${x ? 'x' : ''}">${on || x ? d : ''}</span>`;
+          const on = cm & bit(d), x = sm & bit(d), a = am & bit(d);
+          inner += `<span class="${x ? 'x' : a ? 'a' : ''}">${on || x || a ? d : ''}</span>`;
         }
         inner += '</i>';
       } else {
@@ -1381,7 +1445,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
           inner = '<i class="nt">';
           for (let d = 1; d <= 9; d++) {
             const on = nm & bit(d);
-            inner += `<span class="${(hl === 'full' || nd) && sv === d && on && !S.hint ? 'm' : ''}">${on ? d : ''}</span>`;
+            inner += `<span class="${(hl === 'full' || nd) && sv === d && on && !hintOn ? 'm' : ''}">${on ? d : ''}</span>`;
           }
           inner += '</i>';
         }
@@ -1451,18 +1515,26 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     if (S.noteMode) h += `<span class="chip on">筆記模式 · ${S.noteDigit ? '數字 ' + S.noteDigit : '揀格再按數字'}</span>`;
     $('#status').innerHTML = h;
   }
-  const LEGEND = [['tgt', 'k-tgt', '目標格'], ['blk', 'k-blk', '擋住的數字'], ['exc', 'k-exc', '放不了的格'], ['pat', 'k-pat', '關鍵的格'], ['elim', 'k-elim', '可排除的格'], ['hs', 'k-hs', '檢查範圍'], ['dig', 'k-dig', '盤面上已有的這個數字']];
+  const LEGEND = [['tgt', 'k-tgt', '目標格'], ['blk', 'k-blk', '擋住的數字'], ['exc', 'k-exc', '放不了的格'], ['pat', 'k-pat', '關鍵的格'], ['elim', 'k-elim', '可排除的格'], ['stk', 'k-stk', '筆記多咗(劃線)'], ['add', 'k-add', '筆記少咗(綠色底線)'], ['hs', 'k-hs', '檢查範圍'], ['dig', 'k-dig', '盤面上已有的這個數字']];
   function renderHint() {
     const el = $('#hint'), h = S.hint;
-    if (!h) { el.hidden = true; el.innerHTML = ''; return; }
+    if (!h) { el.hidden = true; el.innerHTML = ''; el.classList.remove('paused'); return; }
+    if (h.paused) {
+      el.hidden = false; el.classList.add('paused');
+      el.innerHTML = `<div class="ah"><b>提示已暫停</b><span>停在:${h.plan.pages[h.page].title}</span></div><div class="ar2"><button class="btn small apply" data-act="hint-resume">繼續提示</button><button class="btn small ghost" data-act="hint-close">關閉</button></div>`;
+      return;
+    }
+    el.classList.remove('paused');
     const pl = h.plan, n = pl.pages.length, pg = pl.pages[h.page], m = pg.marks, last = h.page >= n - 1;
-    const lg = LEGEND.filter(([k]) => (k === 'dig' ? m.dig : k === 'hs' ? m.hs.length : m[k].length)).map(([, c, t]) => `<span><i class="${c}"></i>${t}</span>`).join('');
+    const cnt = (k) => (k === 'dig' ? m.dig : Array.isArray(m[k]) ? m[k].length : Object.keys(m[k] || {}).length);
+    const lg = LEGEND.filter(([k]) => cnt(k)).map(([, c, t]) => `<span><i class="${c}"></i>${t}</span>`).join('');
     el.hidden = false;
     el.innerHTML = `
       <div class="ah"><b>${pg.title}</b><span>${pg.tag ? pg.tag + ' · ' : ''}第 ${h.page + 1} / ${n} 頁</span></div>
       ${lg ? `<div class="lg">${lg}</div>` : ''}
       <div class="hb">${pg.html}</div>
       <div class="ar2">
+        <button class="btn small ghost" data-act="hint-pause">暫停</button>
         ${h.page > 0 ? '<button class="btn small ghost" data-act="hint-prev">上一步</button>' : ''}
         ${pl.error && !S.g.flags.blind ? '<button class="btn small" data-act="hint-rb">回溯</button>' : ''}
         ${last ? '<button class="btn small apply" data-act="hint-close">明白了</button>' : '<button class="btn small apply" data-act="hint-next">下一步</button><button class="btn small ghost" data-act="hint-close">關閉</button>'}
@@ -1510,7 +1582,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       <div class="srow"><div class="stx"><b>${label}</b><small>${sub}</small></div>
       <button class="sw" role="switch" aria-checked="${!!L[key]}" aria-label="${label}" ${disabled ? 'aria-disabled="true"' : ''} data-act="flag" data-v="${key}"><i></i></button></div>`;
     return `
-      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.2.1 · 2026-10-30</p>
+      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.3 · 2026-10-31</p>
       </div>
       <div class="panel">
         ${resume}
@@ -1675,7 +1747,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     if (!canAct() || S.sel < 0) return;
     const g = S.g, i = S.sel;
     if (g.puz[i]) { say('這是題目給的數字'); return; }
-    S.hint = null;
+    dropHint();
     if (note) {
       if (g.v[i]) { say('先清除這格的數字,才能寫筆記'); return; }
       pushUndo(g); g.notes[i] ^= bit(d);
@@ -1693,20 +1765,20 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     const g = S.g, i = S.sel;
     if (g.puz[i]) return;
     if (!g.v[i] && !g.notes[i]) return;
-    pushUndo(g); S.hint = null;
+    pushUndo(g); dropHint();
     g.v[i] = 0; g.notes[i] = 0; g.how[i] = '';
     saveGame(); render();
   }
   function undo() {
     if (!canAct() || !S.g.U.length) return;
     const g = S.g;
-    g.Rd.push(snap(g)); restore(g, g.U.pop()); S.hint = null;
+    g.Rd.push(snap(g)); restore(g, g.U.pop()); dropHint();
     saveGame(); render();
   }
   function redo() {
     if (!canAct() || !S.g.Rd.length) return;
     const g = S.g;
-    g.U.push(snap(g)); restore(g, g.Rd.pop()); S.hint = null;
+    g.U.push(snap(g)); restore(g, g.Rd.pop()); dropHint();
     saveGame();
     if (isSolved(g)) { win(S.sel >= 0 ? S.sel : 40); return; }
     render();
@@ -1714,7 +1786,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
   function autoNotes() {
     if (!canAct()) return;
     const g = S.g;
-    pushUndo(g); S.hint = null;
+    pushUndo(g); dropHint();
     const c = E.candidates(g.v, g.elim);
     for (let i = 0; i < 81; i++) if (!g.v[i]) g.notes[i] = c[i];
     saveGame(); render(); say('已填入所有候選數字');
@@ -1732,17 +1804,17 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     g.Rd.push(cur);
     for (let k = popped.length - 1; k >= 1; k--) g.Rd.push(popped[k]);
     restore(g, popped[0]);
-    S.hint = null;
+    dropHint();
     saveGame(); render();
     say(`已回到最後一個沒有錯誤的狀態(退回 ${popped.length} 步)`);
   }
   function openHint() {
     if (!canAct()) return;
     const g = S.g;
-    if (S.hint) { S.hint = null; render(); return; }
+    if (S.hint) { if (S.hint.paused) { resumeHint(); return; } S.hint = null; render(); return; }
     if (g.maxHints && g.hints >= g.maxHints) { say('這局的提示已經用完'); return; }
-    /* 提示只看盤面上已填的數字,不看任何筆記;並從所選的格附近找起 */
-    const plan = E.hintPlan(g.v, g.sol, S.sel);
+    /* 提示以盤面為準,並對照你寫的筆記(有不符先講解);從所選的格附近找起 */
+    const plan = E.hintPlan(g.v, g.sol, S.sel, g.notes);
     if (!plan) { say('盤面已經完成了'); return; }
     if (plan.error && g.flags.blind) { say('盤面有填錯的格,請先按「核對」查看(不扣提示次數)'); return; }
     g.hints++;
@@ -1750,6 +1822,24 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     S.hint = { plan, page: 0, focus: null };
     saveGame(); render();
     try { if (window.matchMedia('(max-width: 600px)').matches) window.scrollTo({ top: 0 }); } catch (x) {}
+  }
+  /* 編輯盤面或筆記:提示暫停中就保留,繼續時再按最新情況更新;否則關閉 */
+  function dropHint() { if (S.hint && S.hint.paused) S.hint.dirty = true; else S.hint = null; }
+  /* 繼續提示:不計提示次數。盤面或筆記改過就重新計算,盡量保持同一格、同一頁 */
+  function resumeHint() {
+    const h = S.hint, g = S.g;
+    if (!h || !canAct()) return;
+    if (h.dirty) {
+      const tgt = h.plan.place ? h.plan.place.i : -1;
+      const plan = E.hintPlan(g.v, g.sol, S.sel, g.notes, tgt);
+      if (!plan || (plan.error && g.flags.blind)) { S.hint = null; render(); say(plan ? '盤面有填錯的格,請先按「核對」查看' : '盤面已經完成了'); return; }
+      const old = h.plan.pages[h.page] && h.plan.pages[h.page].title;
+      const k = plan.pages.findIndex((p) => p.title === old);
+      const same = !!plan.place && plan.place.i === tgt;
+      h.plan = plan; h.page = k >= 0 ? k : 0; h.dirty = false;
+      say(same ? '你改過盤面或筆記,提示已按最新情況更新' : '你改過盤面,提示改為另一格');
+    }
+    h.paused = false; h.focus = null; render();
   }
   function hintGo(dp) {
     const h = S.hint;
@@ -1766,7 +1856,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     const bad = [];
     for (let i = 0; i < 81; i++) if (!g.puz[i] && g.v[i] && g.v[i] !== g.sol[i]) bad.push(i);
     if (!bad.length) { say(g.v.every((x) => x) ? '全部正確!' : '目前填的數字都和正確答案一致,繼續加油。'); return; }
-    S.check = new Set(bad); S.hint = null;
+    S.check = new Set(bad); dropHint();
     render();
     say(`有 ${bad.length} 格和正確答案不同,已用紅色標示。`);
   }
@@ -1889,6 +1979,8 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     kdel: (t) => { const a = t.dataset.a; KEYS[a].splice(+t.dataset.i, 1); S.cap = null; buildKeyAct(); saveKeys(); render(); },
     kreset: () => { for (const [a, , d] of KEYDEF) KEYS[a] = d.slice(); S.cap = null; buildKeyAct(); saveKeys(); render(); say('已還原預設快捷鍵'); },
     'hint-next': () => hintGo(1),
+    'hint-pause': () => { if (S.hint) { S.hint.paused = true; S.hint.focus = null; render(); } },
+    'hint-resume': resumeHint,
     'hint-prev': () => hintGo(-1),
     'hint-rb': () => { S.hint = null; rollback(); render(); },
     'hint-close': () => { S.hint = null; render(); },
@@ -1913,7 +2005,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     const now = Date.now();
     if (lastMark.i === i && lastMark.d === S.noteDigit && now - lastMark.t < 700 && (g.notes[i] & bit(S.noteDigit))) { lastMark.t = 0; inputDigit(S.noteDigit, false); return; } /* 快速連按兩下 = 填入 */
     lastMark = { i, d: S.noteDigit, t: now };
-    S.hint = null; pushUndo(g); g.notes[i] ^= bit(S.noteDigit);
+    dropHint(); pushUndo(g); g.notes[i] ^= bit(S.noteDigit);
     saveGame(); render();
   }
   function onKey(d, note) { inputDigit(d, note); }
@@ -1933,7 +2025,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
     const g = S.g;
     if (g.puz[i] || g.v[i]) { S.sel = i; adoptDigit(i); render(); return; }
     if (!S.noteDigit) return;
-    S.hint = null; S.sel = i;
+    dropHint(); S.sel = i;
     pushUndo(g); g.notes[i] ^= bit(S.noteDigit);
     saveGame(); render();
   }
@@ -2108,7 +2200,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       else if (act === 'hint') openHint();
       else if (act === 'auto') autoNotes();
       else if (act === 'check') { e.preventDefault(); checkAnswer(); }
-      else if (act === 'hintnext') { e.preventDefault(); if (!S.hint) openHint(); else if (S.hint.page < S.hint.plan.pages.length - 1) hintGo(1); else { S.hint = null; render(); } }
+      else if (act === 'hintnext') { e.preventDefault(); if (!S.hint) openHint(); else if (S.hint.paused) resumeHint(); else if (S.hint.page < S.hint.plan.pages.length - 1) hintGo(1); else { S.hint = null; render(); } }
       else if ((act === 'nextd' || act === 'prevd') && S.noteMode) {
         e.preventDefault();
         const dir = act === 'prevd' ? -1 : 1;
