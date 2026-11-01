@@ -382,6 +382,39 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .top .title { font-size: 20px; }
 }
 
+/* ---------- 手機橫向牌局:盤面左(撐滿高度)、功能鍵打橫一排、九宮格數字牌右下 ---------- */
+@media (orientation: landscape) and (max-height: 520px) and (min-width: 560px) {
+  body { padding-block: 6px; }
+  .game { --bs: calc(100dvh - 12px); max-width: none; height: calc(100dvh - 12px); display: grid; gap: 6px 12px;
+    grid-template-columns: var(--bs) minmax(0, 1fr); grid-template-rows: auto auto 1fr; }
+  .game:has(#hint.paused) { grid-template-rows: auto auto auto 1fr; }
+  .play, .boardcol, .side { display: contents; }
+  .tray { grid-column: 1; grid-row: 1 / -1; width: var(--bs); --tp: 4px; border-radius: 14px; align-self: start; }
+  .board { border-radius: 8px; }
+  .top { grid-column: 2; grid-row: 1; flex-wrap: nowrap; gap: 6px; }
+  .top .title { display: none; }
+  .top .btn.small { min-height: 34px; padding: 0.2em 0.7em; font-size: 13px; }
+  .top .iconbtn { width: 34px; height: 34px; }
+  .top .timer { font-size: 16px; padding: 2px 12px; min-width: 70px; }
+  .top .rt-txt { display: none; } .top .rt-ic { display: inline-flex; }
+  #status { display: none; }
+  #tools { grid-column: 2; grid-row: 2; grid-template-columns: repeat(8, 1fr); gap: 4px; width: 100%; }
+  .game:has(#hint.paused) #tools { grid-row: 3; }
+  .tool { min-height: 44px; padding: 2px 0; font-size: 10.5px; gap: 1px; border-radius: 10px; white-space: nowrap; }
+  .tool svg { width: 16px; height: 16px; }
+  #pad { grid-column: 2; grid-row: 3; width: 100%; min-height: 0; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 6px; }
+  .game:has(#hint.paused) #pad { grid-row: 4; }
+  .key { aspect-ratio: auto; height: 100%; min-height: 0; flex-direction: row; border-radius: 14px; }
+  .key .kd { font-size: clamp(28px, 11dvh, 46px); }
+  .key .kr { position: absolute; right: 10px; bottom: 6px; align-self: auto; margin: 0; font-size: 13px; }
+  .key.on { transform: translateY(-2px); }
+  #hint { grid-column: 2; grid-row: 2 / 4; position: static; max-height: none; min-height: 0; overflow: auto; box-shadow: none; padding: 8px 12px; }
+  #hint.paused { grid-row: 2; }
+  .game:has(#hint:not([hidden]):not(.paused)) #tools, .game:has(#hint:not([hidden]):not(.paused)) #pad { display: none; }
+  .assist .hb ul { grid-template-columns: 1fr; }
+}
+@media not all and (orientation: landscape) and (max-height: 520px) and (min-width: 560px) { .top .rt-ic { display: none; } }
+
 /* ---------- 浮層 ---------- */
 .overlay { position: fixed; inset: 0; background: var(--scrim); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; overflow: auto; }
 .card { width: min(100%, 540px); max-height: 100%; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28); outline: none; }
@@ -1500,7 +1533,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       <span class="title">數獨</span>
       <span class="pill hlp"><b>${dname(g.diff)}</b></span>
       <span class="sp"></span>
-      <button class="btn ghost small" data-act="reset" ${g.status !== 'play' ? 'disabled' : ''}>重置</button>
+      <button class="btn ghost small" data-act="reset" aria-label="重置" ${g.status !== 'play' ? 'disabled' : ''}><span class="rt-txt">重置</span><span class="rt-ic">${ic('rollback', 18)}</span></button>
       <span class="timer" id="tm" aria-label="${g.flags.timed ? '剩餘時間' : '用時'}"></span>
       <button class="iconbtn" data-act="pause" aria-label="${S.paused ? '繼續' : '暫停'}" ${g.status !== 'play' ? 'disabled' : ''}>${ic(S.paused ? 'play' : 'pause', 18)}</button>`;
     updateTimer();
@@ -1584,7 +1617,7 @@ if (typeof module !== 'undefined') module.exports = SudokuEngine;
       <div class="srow"><div class="stx"><b>${label}</b><small>${sub}</small></div>
       <button class="sw" role="switch" aria-checked="${!!L[key]}" aria-label="${label}" ${disabled ? 'aria-disabled="true"' : ''} data-act="flag" data-v="${key}"><i></i></button></div>`;
     return `
-      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.3.1 · 2026-10-31</p>
+      <div class="hero"><div class="lockup"><div class="mark" aria-hidden="true">${['5', '', '3', '', '9', '', '1', '', '7'].map((d, i) => `<i${i === 4 ? ' class="y"' : ''}>${d}</i>`).join('')}</div><h1>數獨</h1></div><p>邏輯推理 · 每題唯一解</p><p class="ver">v1.4 · 2026-11-01</p>
       </div>
       <div class="panel">
         ${resume}
